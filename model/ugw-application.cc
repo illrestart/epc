@@ -1,0 +1,89 @@
+
+#include "ugw-application.h"
+#include "ns3/log.h"
+#include "ns3/simulator.h"
+
+NS_LOG_COMPONENT_DEFINE("ugwApplication");
+
+namespace ns3{
+
+TypeId ugwApplication::GetTypeId(void){
+	static TypeId tid = TypeId("ns3::ugwApplication")
+		.SetParent<Object>();
+	return tid;
+}
+
+void ugwApplication::DoDispose(void){
+	NS_LOG_FUNCTION(this);
+}
+
+ugwApplication::ugwApplication(Ptr<Node> ugwNode,Ipv4InterfaceContainer controllerUgwIfc,int enbport,Ipv4InterfaceContainer ugwEnbIfc,int controllerport)
+	:m_ugwNode(ugwNode),
+	m_controllerUgwIfc(controllerUgwIfc),
+        m_ugwEnbIfc(ugwEnbIfc),
+	m_enbPort(enbport),
+	m_controllerPort(controllerport)
+{
+	m_port = 8086;
+	InitSocket();
+}
+ugwApplication::~ugwApplication(void){
+	NS_LOG_FUNCTION(this);
+}
+void ugwApplication::InitRecvSocket(){
+	m_socketController = Socket::CreateSocket(m_ugwNode,TypeId::LookupByName("ns3::UdpSocketFactory"));
+	m_socketController->Bind(InetSocketAddress(m_controllerUgwIfc.GetAddress(1),8086));
+
+	m_socketEnb = Socket::CreateSocket(m_ugwNode,TypeId::LookupByName("ns3::UdpSocketFactory"));
+	m_socketEnb->Bind(InetSocketAddress(m_ugwEnbIfc.GetAddress(0),m_port));
+
+}
+void ugwApplication::InitSendSocket(){
+	m_sendToControllerSocket = Socket::CreateSocket(m_ugwNode,TypeId::LookupByName("ns3::UdpSocketFactory"));
+	m_sendToControllerSocket->Bind(InetSocketAddress(m_controllerUgwIfc.GetAddress(1),8085));
+
+	m_sendToEnbSocket = Socket::CreateSocket(m_ugwNode,TypeId::LookupByName("ns3::UdpSocketFactory"));
+	m_sendToEnbSocket->Bind(InetSocketAddress(m_ugwEnbIfc.GetAddress(0),8084));
+
+}
+void ugwApplication::InitSocket(){
+	InitRecvSocket();
+
+	InitSendSocket();
+}
+
+void ugwApplication::StartApplication(){
+	NS_LOG_FUNCTION(this);	
+	m_socketController->SetRecvCallback(MakeCallback(&ugwApplication::RecvFromEnbSocket,this));
+	m_socketEnb->SetRecvCallback(MakeCallback(&ugwApplication::RecvFromEnbSocket,this));
+}
+void ugwApplication::StopApplication(){
+	NS_LOG_FUNCTION(this);	
+}
+void ugwApplication::ProcessSession(lteEpcTag tag){
+	Ptr<Packet> packetSend = Create<Packet>();
+	lteEpcTag tagSend;
+	tagSend.m_count = tag.m_count;
+	std::cout<<"ugw\t\t: ";
+	if(tag.m_status == (uint8_t)m_SessionModifyBearerRequest){
+		std::cout<<"receive controller modifybearerrequest ";
+		tagSend.setM_Session();
+		tagSend.setM_SessionModifyBearerResponse();
+		packetSend->AddPacketTag(tagSend);
+		m_sendToControllerSocket->SendTo(packetSend,0,InetSocketAddress(m_controllerUgwIfc.GetAddress(0),m_controllerPort));
+	}
+	std::cout<<"\t:tag number"<<tag.m_count<<std::endl;
+} 
+void ugwApplication::ProcessPacket(Ptr<Packet> packet){
+	lteEpcTag tag;
+	packet->RemovePacketTag(tag);
+	if(tag.m_flag == (uint8_t)m_Session){
+		ProcessSession(tag);	
+	}
+}
+void ugwApplication::RecvFromEnbSocket(Ptr<Socket> socket){
+	Ptr<Packet> packet = socket->Recv();
+	Simulator::Schedule(Simulator::Now(),&ugwApplication::ProcessPacket,this,packet);
+}
+
+}
