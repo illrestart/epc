@@ -26,7 +26,7 @@ SessionApplication::SessionApplication(Ptr<Node> node,InetSocketAddress local,In
 	m_totalNumber(totalNumber),
 	m_rate(rate),
 	m_time(time),
-	sessionCount(0)
+	handoverCount(0)
 	
 {
 	tmpTime = 0.0;

@@ -29,7 +29,6 @@ class enbApplication:public Application{
                 void RecvFromMmeSocket(Ptr<Socket>);
                 void RecvFromUgwSocket(Ptr<Socket>);
 
-		void ProcessThread(void);
 		void ProcessPacket(Ptr<Packet>);
 		void ProcessSession(lteEpcTag);
 		void InitRecvSocket();

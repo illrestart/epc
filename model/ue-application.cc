@@ -66,7 +66,7 @@ void ueApplication::ProcessSession(lteEpcTag tag){
 		packetSend->AddPacketTag(tagSend);
 		m_sendToEnbSocket->SendTo(packetSend,0,InetSocketAddress(m_ueEnbIfc.GetAddress(1),m_enbPort));
 	}
-	std::cout<<"\t:tag number"<<tag.m_count<<std::endl;
+	std::cout<<"\t:tag number"<<tag.m_count<<"----------"<<Simulator::Now().GetSeconds()<<std::endl;
 } 
 void ueApplication::ProcessPacket(Ptr<Packet> packet){
 	lteEpcTag tag;
@@ -79,7 +79,8 @@ void ueApplication::ProcessPacket(Ptr<Packet> packet){
 
 void ueApplication::RecvFromEnbSocket(Ptr<Socket> socket){
 	Ptr<Packet> packet = socket->Recv();
-	Simulator::Schedule(Simulator::Now(),&ueApplication::ProcessPacket,this,packet);
+//	Simulator::Schedule(Simulator::Now(),&ueApplication::ProcessPacket,this,packet);
+	Simulator::Schedule(Seconds(0.0),&ueApplication::ProcessPacket,this,packet);
 }
 
 }

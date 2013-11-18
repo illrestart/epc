@@ -88,46 +88,49 @@ void mmeApplication::ProcessSession(lteEpcTag tag){
 	else if(tag.m_status == (uint8_t)m_SessionModifyBearerResponse){
 		std::cout<<"receive controller modify bearer response ";
 	}
-	std::cout<<"\t:tag number"<<tag.m_count<<std::endl;
+	std::cout<<"\t:tag number"<<tag.m_count<<"----------"<<Simulator::Now()<<std::endl;
 } 
-void mmeApplication::ProcessPacket(Ptr<Packet> packet){
-/*	lteEpcTag tag;
-	packet->RemovePacketTag(tag);
-	ProcessSession(tag);
 
-	Ptr<Packet> packet;
-	m_mutex.Lock();
-	if(m_vec.size() == 0) std::cout<<"warning\n";
-	packet = m_vec[m_vec.size() - 1];
-	m_vec.pop_back();
-	m_mutex.Unlock();*/
+void  mmeApplication::ProcessHandover(lteEpcTag tag){
+	Ptr<Packet> packetSend = Create<Packet>();
+	lteEpcTag tagSend;
+	tagSend.m_count = tag.m_count;
+	std::cout<<"mme\t\t: ";
+	if(tag.m_status == (uint8_t)m_HandoverPathSwitchRequest){
+		std::cout<<"receive Path Switch Request from TargetEnb";
+		tagSend.setM_Handover();
+		tagSend.setM_HandoverModifyBearerRequest();
+		packetSend->AddPacketTag(tagSend);
+		m_sendToControllerSocket->SendTo(packetSend,0,InetSocketAddress(m_mmeControllerIfc.GetAddress(1),m_controllerPort));
+	}
+        else if(tag.m_status == (uint8_t)m_HandoverModifyBearerResponse){
+               std::cout<<"receive Modify Bearer Response from controller";
+        }
+        else if(tag.m_status == (uint8_t)m_HandoverEndMarkerToTargetEnb){
+		std::cout<<"receive End Marker To TargetEnb from controller";
+		tagSend.setM_Handover();
+		tagSend.setM_HandoverEndMarkerToTargetEnb();
+		packetSend->AddPacketTag(tagSend);
+		m_sendToEnbSocket->SendTo(packetSend,0,InetSocketAddress(m_enbMmeIfc.GetAddress(0),m_enbPort));
+        }
+        std::cout<<"\t:tag number"<<tag.m_count<<"----------"<<Simulator::Now()<<std::endl;
+}
+
+void mmeApplication::ProcessPacket(Ptr<Packet> packet){
 	lteEpcTag tag;
 	packet->RemovePacketTag(tag);
 	if(tag.m_flag == (uint8_t)m_Session){
 		ProcessSession(tag);	
 	}
+        else if(tag.m_flag == (uint8_t)m_Handover){
+                ProcessHandover(tag);
+        }
 }
-void mmeApplication::ProcessThread(void){
-//	while(1){
-//		m_signal.wait();
-//		if(m_vec.size() > 0 ) ProcessPacket();	
-//	}
-//	m_mutex.Lock();
-//	if(m_vec.size() > 0){
-//		m_mutex.Unlock();
-//		ProcessPacket();
-//	}
-//	else{
-//		m_mutex.Unlock();
-//	}
-}
+
 void mmeApplication::RecvFromEnbSocket(Ptr<Socket> socket){
 	Ptr<Packet> packet = socket->Recv();
-	Simulator::Schedule(Simulator::Now(),&mmeApplication::ProcessPacket,this,packet);
-/*	m_mutex.Lock();
-	m_vec.push_back(packet);
-	m_mutex.Unlock();
-	Simulator::Schedule(Simulator::Now(),&mmeApplication::ProcessPacket,this);*/
+//	Simulator::Schedule(Simulator::Now(),&mmeApplication::ProcessPacket,this,packet);
+	Simulator::Schedule(Seconds(0.0),&mmeApplication::ProcessPacket,this,packet);
 }
 
 }

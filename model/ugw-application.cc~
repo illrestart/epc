@@ -72,41 +72,39 @@ void ugwApplication::ProcessSession(lteEpcTag tag){
 		packetSend->AddPacketTag(tagSend);
 		m_sendToControllerSocket->SendTo(packetSend,0,InetSocketAddress(m_controllerUgwIfc.GetAddress(0),m_controllerPort));
 	}
-	std::cout<<"\t:tag number"<<tag.m_count<<std::endl;
+	std::cout<<"\t:tag number"<<tag.m_count<<"----------"<<Simulator::Now().GetSeconds()<<std::endl;
 } 
+
+void ugwApplication::ProcessHandover(lteEpcTag tag){
+	Ptr<Packet> packetSend = Create<Packet>();
+	lteEpcTag tagSend;
+	tagSend.m_count = tag.m_count;
+	std::cout<<"ugw\t\t: ";
+	if(tag.m_status == (uint8_t)m_HandoverModifyBearerRequestToUgw){
+		std::cout<<"receive Modify Bearer Request from controller";
+		tagSend.setM_Handover();
+		tagSend.setM_HandoverModifyBearerResponseToUgw();
+		packetSend->AddPacketTag(tagSend);
+		m_sendToControllerSocket->SendTo(packetSend,0,InetSocketAddress(m_controllerUgwIfc.GetAddress(0),m_controllerPort));
+	}
+	std::cout<<"\t:tag number"<<tag.m_count<<"----------"<<Simulator::Now()<<std::endl;
+} 
+
 void ugwApplication::ProcessPacket(Ptr<Packet> packet){
-/*	lteEpcTag tag;
-	packet->RemovePacketTag(tag);
-	ProcessSession(tag);
-	Ptr<Packet> packet;
-	m_mutex.Lock();
-	if(m_vec.size() == 0) std::cout<<"warning\n";
-	packet = m_vec[m_vec.size() - 1];
-	m_vec.pop_back();
-	m_mutex.Unlock();*/
 	lteEpcTag tag;
 	packet->RemovePacketTag(tag);
 	if(tag.m_flag == (uint8_t)m_Session){
 		ProcessSession(tag);	
 	}
-}
-void ugwApplication::ProcessThread(void){
-//	while(1){
-//		m_signal.wait();
-//		if(m_vec.size() > 0 ) ProcessPacket();	
-//	}
-//	m_mutex.Lock();
-//	if(m_vec.size() > 0){
-//		m_mutex.Unlock();
-//		ProcessPacket();
-//	}
-//	else{
-//		m_mutex.Unlock();
-//	}
+	else if(tag.m_flag == (uint8_t)m_Handover){
+		ProcessHandover(tag);	
+	}
+
 }
 void ugwApplication::RecvFromEnbSocket(Ptr<Socket> socket){
 	Ptr<Packet> packet = socket->Recv();
-	Simulator::Schedule(Simulator::Now(),&ugwApplication::ProcessPacket,this,packet);
+//	Simulator::Schedule(Simulator::Now(),&ugwApplication::ProcessPacket,this,packet);
+	Simulator::Schedule(Seconds(0.0),&ugwApplication::ProcessPacket,this,packet);
 }
 
 }

@@ -31,6 +31,7 @@ class enbApplication:public Application{
 
 		void ProcessPacket(Ptr<Packet>);
 		void ProcessSession(lteEpcTag);
+		void ProcessHandover(lteEpcTag);
 		void InitRecvSocket();
 		void InitSendSocket();
 		void InitSocket();

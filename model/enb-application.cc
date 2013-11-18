@@ -64,6 +64,17 @@ void enbApplication::StartApplication(){
 	m_socketUe->SetRecvCallback(MakeCallback(&enbApplication::RecvFromUeSocket,this));
 	m_socketMme->SetRecvCallback(MakeCallback(&enbApplication::RecvFromUeSocket,this));
 	m_socketUgw->SetRecvCallback(MakeCallback(&enbApplication::RecvFromUeSocket,this));
+
+/*test*/
+/*	Ptr<Packet> packetSend = Create<Packet>();
+	lteEpcTag tagSend;
+
+	tagSend.setM_Handover();
+	tagSend.setM_HandoverPathSwitchRequest();
+	packetSend->AddPacketTag(tagSend);
+	
+	m_sendToMmeSocket->SendTo(packetSend,0,InetSocketAddress(m_enbMmeIfc.GetAddress(1),m_mmePort));	
+*/
 }
 void enbApplication::StopApplication(){
 	NS_LOG_FUNCTION(this);	
@@ -94,8 +105,23 @@ void enbApplication::ProcessSession(lteEpcTag tag){
 		packetSend->AddPacketTag(tagSend);
 		m_sendToMmeSocket->SendTo(packetSend,0,InetSocketAddress(m_enbMmeIfc.GetAddress(1),m_mmePort));
 	}
-	std::cout<<"\t:tag number"<<tag.m_count<<std::endl;
+	std::cout<<"\t:tag number"<<tag.m_count<<"----------"<<Simulator::Now().GetSeconds()<<std::endl;
 } 
+
+void enbApplication::ProcessHandover(lteEpcTag tag){
+	Ptr<Packet> packetSend = Create<Packet>();
+	lteEpcTag tagSend;
+	tagSend.m_count = tag.m_count;
+	std::cout<<"enb\t\t: ";
+	if(tag.m_status == (uint8_t)m_HandoverEndMarkerToTargetEnb){
+		std::cout<<"TargetENB receives End Marker from mme";
+	}
+        else if(tag.m_status == (uint8_t)m_HandoverPathSwitchRequestAck){
+                std::cout<<"TargetENB receives Path Switch Request Ack from mme";
+        }
+        std::cout<<"\t:tag number"<<tag.m_count<<"----------"<<Simulator::Now().GetSeconds()<<std::endl;
+}
+
 void enbApplication::ProcessPacket(Ptr<Packet> packet){
 	lteEpcTag tag;
 	packet->RemovePacketTag(tag);
@@ -103,13 +129,16 @@ void enbApplication::ProcessPacket(Ptr<Packet> packet){
 	if(tag.m_flag == (uint8_t)m_Session){
 		ProcessSession(tag);	
 	}
+        else if(tag.m_flag == (uint8_t)m_Handover){
+                ProcessHandover(tag);
+        }
 }
 
 void enbApplication::RecvFromUeSocket(Ptr<Socket> socket){	
 	Ptr<Packet> packet = socket->Recv();
-	Simulator::Schedule(Simulator::Now(),&enbApplication::ProcessPacket,this,packet);
+//	Simulator::Schedule(Simulator::Now(),&enbApplication::ProcessPacket,this,packet);
+        Simulator::Schedule(Seconds(0.0),&enbApplication::ProcessPacket,this,packet);
 
 }
-
 
 }

@@ -26,14 +26,14 @@
 namespace ns3{
 	class LTEHelper:public Object{
 		public:
-			LTEHelper();
+			LTEHelper(int,int,float,float,float);
 			virtual ~LTEHelper();
 	
 			static TypeId GetTypeId();
 
 			ApplicationContainer InstallApplication(Ptr<Node>,Ptr<Node>,Ptr<Node>,Ptr<Node>,Ptr<Node>);
 
-			ApplicationContainer InstallTotalApplication(int);
+			ApplicationContainer InstallTotalApplication();
 			ApplicationContainer InstallNodeApplication();
 			ApplicationContainer GetNodeApplication();
 			void SetNodePosition();
@@ -53,19 +53,20 @@ namespace ns3{
 			Ptr<ueApplication> InstallSingleUe(Ptr<Node>,Ipv4InterfaceContainer);
 			Ptr<enbApplication> InstallSingleEnb(Ptr<Node>,Ipv4InterfaceContainer,Ipv4InterfaceContainer,Ipv4InterfaceContainer);
 			Ptr<mmeApplication> InstallSingleMme(Ptr<Node>,Ipv4InterfaceContainer,Ipv4InterfaceContainer);
-			Ptr<controllerApplication> InstallSingleController(Ptr<Node>,Ipv4InterfaceContainer,Ipv4InterfaceContainer);
-			Ptr<ugwApplication> InstallSingleUgw(Ptr<Node>,Ipv4InterfaceContainer,Ipv4InterfaceContainer);
+//			Ptr<controllerApplication> InstallSingleController(Ptr<Node>,Ipv4InterfaceContainer,Ipv4InterfaceContainer);
+                        Ptr<controllerApplication> InstallSingleController(Ptr<Node>,Ipv4InterfaceContainer mmeAddress[],Ipv4InterfaceContainer ugwAddress[]);
+                        Ptr<ugwApplication> InstallSingleUgw(Ptr<Node>,Ipv4InterfaceContainer,Ipv4InterfaceContainer);
 
 			Ipv4AddressHelper ipv4h[20];
 
-			double ue_x[4];
-			double ue_y[4];
-			double enb_x[4];
-			double enb_y[4];
-			double mme_x[4];
-			double mme_y[4];
-			double ugw_x[4];
-			double ugw_y[4];
+			float ue_x[4];
+			float ue_y[4];
+			float enb_x[4];
+			float enb_y[4];
+			float mme_x[4];
+			float mme_y[4];
+			float ugw_x[4];
+			float ugw_y[4];
 
 			int m_uePort;
 			int m_enbPort;
@@ -95,6 +96,15 @@ namespace ns3{
 			Ipv4InterfaceContainer ifc3[4];
 			Ipv4InterfaceContainer ifc4[4];
 
+/*wulei*/
+			int m_num;				//the number of area
+			int m_totalNumber;			//total user number,the unit is 10000
+			float m_sessionRate;			//the users to send session packet in 10000 every second
+			float m_handoverRate;			//the users to send handover packet in 10000 every second
+			float m_time;				//packet send for time
+
+                        
+//                        InetSocketAddress m_SocketSourceIp; //the socket source ip
 	
 	};
 }

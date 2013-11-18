@@ -66,48 +66,21 @@ void ueApplication::ProcessSession(lteEpcTag tag){
 		packetSend->AddPacketTag(tagSend);
 		m_sendToEnbSocket->SendTo(packetSend,0,InetSocketAddress(m_ueEnbIfc.GetAddress(1),m_enbPort));
 	}
-	std::cout<<"\t:tag number"<<tag.m_count<<std::endl;
+	std::cout<<"\t:tag number"<<tag.m_count<<"----------"<<Simulator::Now()<<std::endl;
 } 
 void ueApplication::ProcessPacket(Ptr<Packet> packet){
 	lteEpcTag tag;
 	packet->RemovePacketTag(tag);
-//	ProcessSession(tag);
-/*	Ptr<Packet> packet;
-	m_mutex.Lock();
-	if(m_vec.size() == 0) std::cout<<"warning\n";
-	packet = m_vec[m_vec.size() - 1];
-	m_vec.pop_back();
-	m_mutex.Unlock();
-	lteEpcTag tag;
-	packet->RemovePacketTag(tag);*/
 	if(tag.m_flag == (uint8_t)m_Session){
 		ProcessSession(tag);	
 	}
 	
 }
-void ueApplication::ProcessThread(void){
-/*	while(1){
-		m_signal.wait();
-		ProcessPacket();	
-	}*/
-//	m_mutex.Lock();
-//	if(m_vec.size() > 0){
-//		m_mutex.Unlock();
-//		ProcessPacket();
-//	}
-//	else{
-//		m_mutex.Unlock();
-	//}
-}
+
 void ueApplication::RecvFromEnbSocket(Ptr<Socket> socket){
 	Ptr<Packet> packet = socket->Recv();
-	Simulator::Schedule(Simulator::Now(),&ueApplication::ProcessPacket,this,packet);
-//	ProcessPacket(packet);
-/*	m_mutex.Lock();
-	m_vec.push_back(packet);
-	m_mutex.Unlock();
-	Simulator::Schedule(Simulator::Now(),&ueApplication::ProcessPacket,this);*/
-//	m_signal.post();
+//	Simulator::Schedule(Simulator::Now(),&ueApplication::ProcessPacket,this,packet);
+	Simulator::Schedule(Seconds(0.0),&ueApplication::ProcessPacket,this,packet);
 }
 
 }

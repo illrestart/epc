@@ -72,18 +72,39 @@ void ugwApplication::ProcessSession(lteEpcTag tag){
 		packetSend->AddPacketTag(tagSend);
 		m_sendToControllerSocket->SendTo(packetSend,0,InetSocketAddress(m_controllerUgwIfc.GetAddress(0),m_controllerPort));
 	}
-	std::cout<<"\t:tag number"<<tag.m_count<<std::endl;
+	std::cout<<"\t:tag number"<<tag.m_count<<"----------"<<Simulator::Now().GetSeconds()<<std::endl;
 } 
+
+void ugwApplication::ProcessHandover(lteEpcTag tag){
+	Ptr<Packet> packetSend = Create<Packet>();
+	lteEpcTag tagSend;
+	tagSend.m_count = tag.m_count;
+	std::cout<<"ugw\t\t: ";
+	if(tag.m_status == (uint8_t)m_HandoverModifyBearerRequestToUgw){
+		std::cout<<"receive Modify Bearer Request from controller";
+		tagSend.setM_Handover();
+		tagSend.setM_HandoverModifyBearerResponseToUgw();
+		packetSend->AddPacketTag(tagSend);
+		m_sendToControllerSocket->SendTo(packetSend,0,InetSocketAddress(m_controllerUgwIfc.GetAddress(0),m_controllerPort));
+	}
+	std::cout<<"\t:tag number"<<tag.m_count<<"----------"<<Simulator::Now().GetSeconds()<<std::endl;
+} 
+
 void ugwApplication::ProcessPacket(Ptr<Packet> packet){
 	lteEpcTag tag;
 	packet->RemovePacketTag(tag);
 	if(tag.m_flag == (uint8_t)m_Session){
 		ProcessSession(tag);	
 	}
+	else if(tag.m_flag == (uint8_t)m_Handover){
+		ProcessHandover(tag);	
+	}
+
 }
 void ugwApplication::RecvFromEnbSocket(Ptr<Socket> socket){
 	Ptr<Packet> packet = socket->Recv();
-	Simulator::Schedule(Simulator::Now(),&ugwApplication::ProcessPacket,this,packet);
+//	Simulator::Schedule(Simulator::Now(),&ugwApplication::ProcessPacket,this,packet);
+	Simulator::Schedule(Seconds(0.0),&ugwApplication::ProcessPacket,this,packet);
 }
 
 }

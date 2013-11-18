@@ -2,15 +2,23 @@
 #include <ns3/log.h>
 #include <string.h>
 #include <cstring>
+#include "ns3/InitialModelHelper.h"
 
 NS_LOG_COMPONENT_DEFINE("LTEHelper");
+//using namespace std;
 
 namespace ns3{
 
 
 NS_OBJECT_ENSURE_REGISTERED(LTEHelper);
 
-LTEHelper::LTEHelper(){
+LTEHelper::LTEHelper(int num, int totalNum,float sessionRate,float handoverRate,float time)
+	:m_num(num),
+	m_totalNumber(totalNum),
+	m_sessionRate(sessionRate),
+	m_handoverRate(handoverRate),
+	m_time(time)
+{
 	NS_LOG_FUNCTION(this);
 
 	InstallPort();
@@ -22,7 +30,8 @@ LTEHelper::LTEHelper(){
 //	csma.SetDeviceAttribute("Mtu",UintegerValue(1000));
 }
 
-LTEHelper::~LTEHelper(){
+LTEHelper::~LTEHelper()
+{
 	NS_LOG_FUNCTION(this);
 }
 
@@ -59,14 +68,14 @@ Ipv4InterfaceContainer LTEHelper::GetUeToEnbIp(int num){
 	return ifc[num]; 
 }
 void LTEHelper::SetNodePosition(){
-	double uex[4]={10.0,190.0,10.0,190.0};
-	double uey[4]={150.0,150.0,50.0,50.0};
-	double enbx[4]={30.0,170.0,30.0,170.0};
-	double enby[4]={150.0,150.0,50.0,50.0};
-	double mmex[4]={30.0,170.0,30.0,170.0};
-	double mmey[4]={120.0,120.0,80.0,80.0};
-	double ugwx[4]={50.0,150.0,50.0,150.0};
-	double ugwy[4]={150.0,150.0,50.0,50.0};
+	float uex[4]={10.0,190.0,10.0,190.0};
+	float uey[4]={150.0,150.0,50.0,50.0};
+	float enbx[4]={30.0,170.0,30.0,170.0};
+	float enby[4]={150.0,150.0,50.0,50.0};
+	float mmex[4]={30.0,170.0,30.0,170.0};
+	float mmey[4]={120.0,120.0,80.0,80.0};
+	float ugwx[4]={50.0,150.0,50.0,150.0};
+	float ugwy[4]={150.0,150.0,50.0,50.0};
 
 	for(int i = 0; i < 4 ; ++i){
 		ue_x[i] = uex[i];
@@ -104,8 +113,10 @@ void LTEHelper::InstallStack(){
 	stack.Install(m_controller);
 	stack.Install(m_ugw);
 }
-ApplicationContainer LTEHelper::InstallTotalApplication(int num){
-	CreateNode(num);
+
+//num is the area number, packet will send in time, totalNum is the users number, sessionRate is that users actived in 10000,handoverRate is like sessionRate
+ApplicationContainer LTEHelper::InstallTotalApplication(){
+	CreateNode(m_num);
 	return GetNodeApplication();
 }
 void LTEHelper::CreateNode(int num){
@@ -116,6 +127,9 @@ void LTEHelper::CreateNode(int num){
 	m_ugw.Create(num);
 	InstallStack();
 	InstallNodeDevice(num);
+        Ptr<controllerApplication> controllerapp = InstallSingleController(m_controller.Get(0),ifc2,ifc3);
+        m_controller.Get(0)->AddApplication(controllerapp);
+        m_app.Add(controllerapp);
 }
 void LTEHelper::InstallNodeDevice(int num){
 	for(int i = 0; i < num ;++i){
@@ -126,6 +140,7 @@ void LTEHelper::InstallNodeDevice(int num){
 		dev4[i] = csma.Install(NodeContainer(m_ugw.Get(i),m_enb.Get(i)));
 		InstallNodeAddress(i);
 	}
+
 }
 void LTEHelper::InstallNodeAddress(int area){
 	ifc[area]  = ipv4h[4*area + 0].Assign(dev[area]);
@@ -140,20 +155,35 @@ void LTEHelper::InstallNodeApplication(int area){
 	Ptr<ueApplication> ueapp = InstallSingleUe(m_ue.Get(area),ifc[area]);
 	Ptr<enbApplication> enbapp = InstallSingleEnb(m_enb.Get(area),ifc[area],ifc1[area],ifc4[area]);
 	Ptr<mmeApplication> mmeapp = InstallSingleMme(m_mme.Get(area),ifc1[area],ifc2[area]);
-	Ptr<controllerApplication> controllerapp = InstallSingleController(m_controller.Get(0),ifc2[area],ifc3[area]);
+//	Ptr<controllerApplication> controllerapp = InstallSingleController(m_controller.Get(0),ifc2[area],ifc3[area]);
 	Ptr<ugwApplication> ugwapp = InstallSingleUgw(m_ugw.Get(area),ifc3[area],ifc4[area]);
+
+//	cout<<"-----------tNum:"<<m_totalNumber<<" sRate:"<<m_sessionRate<<" hRate:"<<m_handoverRate<<" time:"<<m_time<<endl;
+
+/*wulei*/
+	InitialModelHelper inithelp;
+	Ptr<SessionApplication> session = inithelp.InstallModelSession(m_ue.Get(area),ifc[area].GetAddress(0),ifc[area].GetAddress(1),m_totalNumber,m_sessionRate,m_time);
+	Ptr<HandoverApplication> handover = inithelp.InstallModelHandover(m_enb.Get(area),ifc1[area].GetAddress(0),ifc1[area].GetAddress(1),m_totalNumber,m_handoverRate,m_time);
+
+	
 
 	m_ue.Get(area)->AddApplication(ueapp);
 	m_enb.Get(area)->AddApplication(enbapp);
 	m_mme.Get(area)->AddApplication(mmeapp);
-	m_controller.Get(0)->AddApplication(controllerapp);
+//	m_controller.Get(0)->AddApplication(controllerapp);
 	m_ugw.Get(area)->AddApplication(ugwapp);
+
+	m_ue.Get(area)->AddApplication(session);
+	m_enb.Get(area)->AddApplication(handover);
 
 	m_app.Add(ueapp);
 	m_app.Add(enbapp);
 	m_app.Add(mmeapp);
-	m_app.Add(controllerapp);
+//	m_app.Add(controllerapp);
 	m_app.Add(ugwapp);
+
+	m_app.Add(session);
+	m_app.Add(handover);
 }
 ApplicationContainer LTEHelper::GetNodeApplication(){
 	return m_app;
@@ -170,8 +200,8 @@ Ptr<ueApplication> LTEHelper::InstallSingleUe(Ptr<Node> ue,Ipv4InterfaceContaine
 	Ptr<mmeApplication> mmeapp = CreateObject<mmeApplication>(mme,enbAddress,m_enbPort,controllerAddress,m_controllerPort); 
 	return mmeapp;
 }
- Ptr<controllerApplication> LTEHelper::InstallSingleController(Ptr<Node> controller,Ipv4InterfaceContainer mmeAddress,Ipv4InterfaceContainer ugwAddress){
-	Ptr<controllerApplication> controllerapp = CreateObject<controllerApplication>(controller,mmeAddress,m_mmePort,ugwAddress,m_ugwPort); 
+ Ptr<controllerApplication> LTEHelper::InstallSingleController(Ptr<Node> controller,Ipv4InterfaceContainer mmeAddress[],Ipv4InterfaceContainer ugwAddress[]){
+	Ptr<controllerApplication> controllerapp = CreateObject<controllerApplication>(controller,mmeAddress,ugwAddress,m_mmePort,m_ugwPort); 
 	return controllerapp;
 }
  Ptr<ugwApplication> LTEHelper::InstallSingleUgw(Ptr<Node> ugw,Ipv4InterfaceContainer enbAddress,Ipv4InterfaceContainer controllerAddress){

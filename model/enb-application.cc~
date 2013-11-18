@@ -35,8 +35,7 @@ enbApplication::~enbApplication(void){
 void enbApplication::InitRecvSocket(){
 	m_socketUe = Socket::CreateSocket(m_enbNode,TypeId::LookupByName("ns3::UdpSocketFactory"));
 	m_socketUe->Bind(InetSocketAddress(m_ueEnbIfc.GetAddress(1),8086));
-//	std::cout<<"in enb ifc bind address0 "<<m_enbMmeIfc.GetAddress(0)<<"address 1 "<<m_enbMmeIfc.GetAddress(1)<<"mmeport"<<m_mmePort<<std::endl;
-//	m_socketUe->Bind(InetSocketAddress(Ipv4Address::GetAny(),8086));
+
 	m_socketMme = Socket::CreateSocket(m_enbNode,TypeId::LookupByName("ns3::UdpSocketFactory"));
 	m_socketMme->Bind(InetSocketAddress(m_enbMmeIfc.GetAddress(0),8086));
 	
@@ -50,8 +49,6 @@ void enbApplication::InitSendSocket(){
 	m_sendToMmeSocket = Socket::CreateSocket(m_enbNode,TypeId::LookupByName("ns3::UdpSocketFactory"));
 	m_sendToMmeSocket->Bind(InetSocketAddress(m_enbMmeIfc.GetAddress(0),8085));
 
-//	m_sendToMmeSocket->Bind(InetSocketAddress(Ipv4Address::GetAny(),8084));
-//	m_sendToMmeSocket->Connect(InetSocketAddress(m_enbMmeIfc.GetAddress(0),8086));
 
 	m_sendToUgwSocket = Socket::CreateSocket(m_enbNode,TypeId::LookupByName("ns3::UdpSocketFactory"));
 	m_sendToUgwSocket->Bind(InetSocketAddress(m_ugwEnbIfc.GetAddress(1),8085));
@@ -67,6 +64,17 @@ void enbApplication::StartApplication(){
 	m_socketUe->SetRecvCallback(MakeCallback(&enbApplication::RecvFromUeSocket,this));
 	m_socketMme->SetRecvCallback(MakeCallback(&enbApplication::RecvFromUeSocket,this));
 	m_socketUgw->SetRecvCallback(MakeCallback(&enbApplication::RecvFromUeSocket,this));
+
+/*test*/
+/*	Ptr<Packet> packetSend = Create<Packet>();
+	lteEpcTag tagSend;
+
+	tagSend.setM_Handover();
+	tagSend.setM_HandoverPathSwitchRequest();
+	packetSend->AddPacketTag(tagSend);
+	
+	m_sendToMmeSocket->SendTo(packetSend,0,InetSocketAddress(m_enbMmeIfc.GetAddress(1),m_mmePort));	
+*/
 }
 void enbApplication::StopApplication(){
 	NS_LOG_FUNCTION(this);	
@@ -82,7 +90,6 @@ void enbApplication::ProcessSession(lteEpcTag tag){
 		tagSend.setM_SessionServiceRequest();
 		packetSend->AddPacketTag(tagSend);
 		m_sendToMmeSocket->SendTo(packetSend,0,InetSocketAddress(m_enbMmeIfc.GetAddress(1),m_mmePort));	
-//		m_sendToMmeSocket->Send(packetSend);
 	}
 	else if(tag.m_status == (uint8_t)m_SessionInitialContextSetupRequest){
 		std::cout<<"receive mme initialcontextsetuprequest ";
@@ -98,50 +105,40 @@ void enbApplication::ProcessSession(lteEpcTag tag){
 		packetSend->AddPacketTag(tagSend);
 		m_sendToMmeSocket->SendTo(packetSend,0,InetSocketAddress(m_enbMmeIfc.GetAddress(1),m_mmePort));
 	}
-	std::cout<<"\t:tag number"<<tag.m_count<<std::endl;
+	std::cout<<"\t:tag number"<<tag.m_count<<"----------"<<Simulator::Now()<<std::endl;
 } 
+
+void enbApplication::ProcessHandover(lteEpcTag tag){
+	Ptr<Packet> packetSend = Create<Packet>();
+	lteEpcTag tagSend;
+	tagSend.m_count = tag.m_count;
+	std::cout<<"enb\t\t: ";
+	if(tag.m_status == (uint8_t)m_HandoverEndMarkerToTargetEnb){
+		std::cout<<"TargetENB receives End Marker from mme";
+	}
+        else if(tag.m_status == (uint8_t)m_HandoverPathSwitchRequestAck){
+                std::cout<<"TargetENB receives Path Switch Request Ack from mme";
+        }
+        std::cout<<"\t:tag number"<<tag.m_count<<"----------"<<Simulator::Now()<<std::endl;
+}
+
 void enbApplication::ProcessPacket(Ptr<Packet> packet){
 	lteEpcTag tag;
 	packet->RemovePacketTag(tag);
-/*	ProcessSession(tag);
 
-	Ptr<Packet> packet;
-	m_mutex.Lock();
-	if(m_vec.size() == 0) std::cout<<"warning\n";
-	packet = m_vec[m_vec.size() - 1];
-	m_vec.pop_back();
-	m_mutex.Unlock();
-	lteEpcTag tag;
-	packet->RemovePacketTag(tag);*/
 	if(tag.m_flag == (uint8_t)m_Session){
 		ProcessSession(tag);	
 	}
-}
-void enbApplication::ProcessThread(void){
-/*	while(1){
-		std::cout<<"in function---\n";
-		m_signal.wait();
-		ProcessPacket();	
-	}*/
-//	m_mutex.Lock();
-//	if(m_vec.size() > 0){
-//		m_mutex.Unlock();
-//		ProcessPacket();
-//	}
-//	else{
-//		m_mutex.Unlock();
-//	}
-}
-void enbApplication::RecvFromUeSocket(Ptr<Socket> socket){	
-	Ptr<Packet> packet = socket->Recv();
-//	ProcessPacket(packet);
-	Simulator::Schedule(Simulator::Now(),&enbApplication::ProcessPacket,this,packet);
-//	m_sendToMmeSocket->SendTo(packet,0,InetSocketAddress(m_enbMmeIfc.GetAddress(1),8086));
-/*	m_mutex.Lock();
-	m_vec.push_back(packet);
-	m_mutex.Unlock();
-	Simulator::Schedule(Simulator::Now(),&enbApplication::ProcessPacket,this);*/
+        else if(tag.m_flag == (uint8_t)m_Handover){
+                ProcessHandover(tag);
+        }
 }
 
+void enbApplication::RecvFromUeSocket(Ptr<Socket> socket){	
+	Ptr<Packet> packet = socket->Recv();
+//	Simulator::Schedule(Simulator::Now(),&enbApplication::ProcessPacket,this,packet);
+        Simulator::Schedule(Seconds(0.0),&enbApplication::ProcessPacket,this,packet);
+
+}
 
 }

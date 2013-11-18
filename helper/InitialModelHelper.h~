@@ -22,8 +22,8 @@ class InitialModelHelper: public Object{
 
 		static TypeId GetTypeId();
 
-		Ptr<SessionApplication> InstallModelSession(Ptr<Node>,Ipv4Address,Ipv4Address,int,float,float);
-		Ptr<HandoverApplication> InstallModelHandover(Ptr<Node>,Ipv4Address,Ipv4Address,int,float,float);
+		Ptr<SessionApplication> InstallModelSession(Ptr<Node>,Ipv4Address,Ipv4Address,int,double,double);
+		Ptr<HandoverApplication> InstallModelHandover(Ptr<Node>,Ipv4Address,Ipv4Address,int,double,double);
 };
 
 }
