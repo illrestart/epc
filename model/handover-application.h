@@ -19,7 +19,7 @@ class HandoverApplication:public Application{
 			void DoDispose(void);
 		public:
 
-			HandoverApplication(Ptr<Node>,InetSocketAddress,InetSocketAddress,int,float,float);
+			HandoverApplication(NodeContainer,NodeContainer,Ipv4InterfaceContainer,int,float,float);
 			virtual ~HandoverApplication(void);
 			virtual void StartApplication();
 			virtual void StopApplication();
@@ -30,6 +30,9 @@ class HandoverApplication:public Application{
 			void StartSending();
 			void sendPacket();
 
+			NodeContainer m_uec;
+			NodeContainer m_enbc;
+			Ipv4InterfaceContainer m_ifc;
 			Ptr<Node> m_node;
 			InetSocketAddress m_remote;
 			InetSocketAddress m_local;

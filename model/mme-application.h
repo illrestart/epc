@@ -21,10 +21,13 @@ class mmeApplication:public Application{
 	protected:
 		void DoDispose(void);
 	public:
-		mmeApplication(Ptr<Node>,Ipv4InterfaceContainer,int,Ipv4InterfaceContainer,int);
+		mmeApplication(Ptr<Node>,NodeContainer,NodeContainer,NodeContainer,Ipv4InterfaceContainer);
 		virtual ~mmeApplication(void);
 		virtual void StartApplication();
 		virtual void StopApplication();
+
+		void SetStatus(lteEpcTag,uint8_t,uint8_t,InetSocketAddress);
+
 		void RecvFromEnbSocket(Ptr<Socket>);
 		void RecvFromControllerSocket(Ptr<Socket>);
 
@@ -37,9 +40,14 @@ class mmeApplication:public Application{
 		void InitSocket();
 
 		Ptr<Node> m_mmeNode;
+		NodeContainer m_mmec;
+		NodeContainer m_enbc;
+		NodeContainer m_controllerc;
 
 		Ipv4InterfaceContainer m_enbMmeIfc;
 		Ipv4InterfaceContainer m_mmeControllerIfc;
+		Ipv4InterfaceContainer m_ifc;
+
 		int m_enbPort;
 		int m_controllerPort;
 		int m_port;
@@ -47,6 +55,8 @@ class mmeApplication:public Application{
 		Ptr<Socket> m_sendToControllerSocket;
 		Ptr<Socket> m_socketEnb;
 		Ptr<Socket> m_socketController;
+
+		Ptr<Socket> m_socket;
 
 		std::vector< Ptr<Packet> > m_vec;
 		SystemMutex m_mutex;

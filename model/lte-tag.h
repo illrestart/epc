@@ -9,6 +9,8 @@
 #include "ns3/traced-callback.h"
 #include "ns3/object.h"
 #include "ns3/callback.h"
+#include <string>
+#include <sstream>
 
 #ifndef LTEEPCTAG_H
 #define LTEEPCTAG_H
@@ -66,6 +68,14 @@ class lteEpcTag : public Tag {
 		
 		virtual void Print(std::ostream &os)const{}
 
+//function user to transform Ipv4Address and string
+		void setSourceIp(Ipv4Address);
+		void setSourceIp(string);
+		void setDestIp(Ipv4Address);
+		void setDestIp(string);
+		string getStrIp(Ipv4Address);
+		
+
 		void setM_Session();
 		void setM_Handover();
 
@@ -94,6 +104,9 @@ class lteEpcTag : public Tag {
 		uint8_t m_flag;
 		int m_count;
 		int m_id;
+		
+		Ipv4Address m_sourceIP;
+		Ipv4Address m_destIp;
 
 };
 

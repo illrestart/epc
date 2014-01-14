@@ -11,6 +11,7 @@
 #include "ns3/internet-module.h"
 #include "ns3/packet.h"
 #include "ns3/network-module.h"
+#include "ns3/lte-epc=area.h"
 namespace ns3{
 
 class packFlag{
@@ -25,26 +26,32 @@ class controllerApplication:public Application{
 	public:
 
 //		controllerApplication(Ptr<Node>,Ipv4InterfaceContainer,Ipv4InterfaceContainer,int,int);
-                controllerApplication(Ptr<Node> controllerNode,Ipv4InterfaceContainer mmeControllerIfc[],Ipv4InterfaceContainer controllerUgwIfc[],int,int);
+                controllerApplication(Ptr<Node>,NodeContainer,NodeContainer,Ipv4InterfaceContainer ifc);
 
 		virtual ~controllerApplication(void);
 		virtual void StartApplication();
 		virtual void StopApplication();
+
+		void SetStatus(lteEpcTag,uint8_t,uint8_t,Ipv4Address);
+		void InstallAreaInfo(vector<lteEpcArea>);
+
 		void RecvFromMmeSocket(Ptr<Socket>);
                 void RecvFromUgwSocket(Ptr<Socket>);
-		void ProcessPacket(Ptr<Packet>,int);
-		void ProcessSession(lteEpcTag,int);
-		void ProcessHandover(lteEpcTag,int);
+		void ProcessPacket(Ptr<Packet>,Ipv4Address);
+		void ProcessSession(lteEpcTag,Ipv4Address);
+		void ProcessHandover(lteEpcTag,Ipv4Address);
 		void InitRecvSocket();
 		void InitSendSocket();
 		void InitSocket();
 
-        void controllerSendPacket(Ptr<Packet>,int); //controller send packet to MME or UGW
 
 		Ptr<Node> m_controllerNode;
+		NodeContainer m_mmec;
+		NodeContainer m_ugwc;
 
 		Ipv4InterfaceContainer m_mmeControllerIfc[4];
 		Ipv4InterfaceContainer m_controllerUgwIfc[4];
+		Ipv4InterfaceContainer m_ifc;
 
 		int m_mmePort;
 		int m_ugwPort;
@@ -54,6 +61,7 @@ class controllerApplication:public Application{
 		Ptr<Socket> m_socketUgw[4];
 		Ptr<Socket> m_sendToMmeSocket[4];
 		Ptr<Socket> m_sendToUgwSocket[4];
+		Ptr<Socket> m_socket;
 
 		std::vector< packFlag > m_vec;
 		packFlag m_packflag;
@@ -72,7 +80,8 @@ class controllerApplication:public Application{
 		int m_buffCount;
 		int m_lossBuff;
 
-//		Ptr<SystemThread> cthread;
+//area info 
+		vector<lteEpcArea> area_m;
 };
 
 }

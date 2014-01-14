@@ -20,7 +20,7 @@ class SessionApplication:public Application{
 		void DoDispose(void);
 	public:
 
-		SessionApplication(Ptr<Node>,InetSocketAddress,InetSocketAddress,int,float,float);
+		SessionApplication(NodeContainer,NodeContainer,Ipv4InterfaceContainer,int,float,float);
 		virtual ~SessionApplication(void);
 		
 		virtual void StartApplication();
@@ -32,6 +32,9 @@ class SessionApplication:public Application{
 		void StartSending();
 		void sendPacket();
 
+		NodeContainer m_uec;
+		NodeContainer m_enbc;
+		Ipv4InterfaceContainer m_ifc;
 		Ptr<Node> m_node;
 		InetSocketAddress m_remote;
 		InetSocketAddress m_local;

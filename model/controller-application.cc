@@ -31,10 +31,11 @@ void controllerApplication::DoDispose(void){
 	std::cout<<"------lossBUff -----:"<<m_lossBuff<<std::endl;
 }
 
-controllerApplication::controllerApplication(Ptr<Node> controllerNode,Ipv4InterfaceContainer mmeControllerIfc[],Ipv4InterfaceContainer controllerUgwIfc[],int mmeport,int ugwport)
+controllerApplication::controllerApplication(Ptr<Node> controllerNode,NodeContainer mmec,NodeContainer ugwc,Ipv4InterfaceContainer ifc)
 	:m_controllerNode(controllerNode),
-	m_mmePort(mmeport),
-	m_ugwPort(ugwport)
+	m_mmec(mmec),
+	m_ugwc(ugwc),
+	m_ifc(ifc)
 {
 	m_port = 8086;
 	m_sendCount = 0;
@@ -78,25 +79,52 @@ void controllerApplication::InitSendSocket(){
 	}
 }
 void controllerApplication::InitSocket(){
-	InitRecvSocket();
+//	InitRecvSocket();
 
-	InitSendSocket();
+//	InitSendSocket();
+	TypeId tid = TypeId::LookupByName("ns3::UdpSocketFactory");
+	m_socket = Socket::CreateSocket(m_controllerNode,tid);
+	m_socket->Bind(InetSocketAddress(m_ifc.GetAddress(m_controllerNode->GetId()),m_port));
 }
 void controllerApplication::StartApplication(){
 	NS_LOG_FUNCTION(this);	
-	for(int i=0; i<4 ;++i){
+/*	for(int i=0; i<4 ;++i){
 		m_socketMme[i]->SetRecvCallback(MakeCallback(&controllerApplication::RecvFromMmeSocket,this));
 		m_socketUgw[i]->SetRecvCallback(MakeCallback(&controllerApplication::RecvFromMmeSocket,this));
 	}
+*/
+	m_socket->SetRecvCallback(MakeCallback(&controllerApplication::RecvFromMmeSocket,this));
 }
 void controllerApplication::StopApplication(){
 	NS_LOG_FUNCTION(this);	
 
 }
-void controllerApplication::ProcessSession(lteEpcTag tag,int flag){
-	Ptr<Packet> packetSend = Create<Packet>();
-	lteEpcTag tagSend;
-	tagSend.m_count = tag.m_count;
+//ues to define the destination address
+void controllerApplication::getDestinationAddress(Ipv4Address ipadd){
+	int i;
+	for(vector<lteEpcArea>::iterator iter = m_area.begin(); iter != m_area.end(); ++iter){
+		for(i = 0; i < iter->m_mmec.GetN(); ++i){
+			if(ipadd == ifc.GetAddress(iter->m_mmec.Get(i)->GetId())){
+				return InetSocketAddress(ifc.GetAddress(iter->m_ugwc.Get(0)->GetId()),8086);
+			}
+		}
+		for(i = 0; i < iter->m_ugwc.GetN(); ++i){
+			if(ipadd == ifc.GetAddress(iter->m_ugwc.Get(i)->GetId())){
+				return InetSocketAddress(ifc.GetAddress(iter->m_mmec.Get(0)->GetId()),8086);
+			}
+		}
+	}
+}
+//use to set the tag in packet and then send them to designaed address
+void controllerApplication::SetStatus(lteEpcTag tag,uint8_t flag,uint8_t status,Ipv4Address ipadd){
+	Ptr<Packet> packet = Create<Packet>();
+	tag.m_flag = flag;
+	tag.m_status = status;
+	packet->AddPacketTag(tag);
+	InetSocketAddress isa= getDestinationAddress(ipadd);
+	m_socket->SendTo(packet,0,isa);
+}
+void controllerApplication::ProcessSession(lteEpcTag tag,Ipv4Address ipadd){
 	std::cout<<"controller\t: ";
 	if(tag.m_status == (uint8_t)m_SessionUplinkData){
 		std::cout<<"receive uplinkdata ";
@@ -105,116 +133,67 @@ void controllerApplication::ProcessSession(lteEpcTag tag,int flag){
 		tagSend.setM_Session();
 		if(tag.m_status == (uint8_t)m_SessionModifyBearerRequest){
 			std::cout<<"rceive mme  modifybearerrequest ";
-			tagSend.setM_SessionModifyBearerRequest();
+			setStatus(tag,(uint8_t)m_Session,(uint8_t)m_SessionModifyBearerRequest,ipadd)
 		}
 		else if(tag.m_status == (uint8_t)m_SessionModifyBearerResponse){
 			std::cout<<"rceive ugw modifycearerreqsponse ";
-			tagSend.setM_SessionModifyBearerResponse();
+			setStatus(tag,(uint8_t)m_Session,(uint8_t)m_SessionModifyBearerResponse,ipadd)
 		}
-		packetSend->AddPacketTag(tagSend);
-        controllerSendPacket(packetSend,flag);
+
 	}
 	std::cout<<"\t:tag number"<<tag.m_count<<"----------"<<Simulator::Now().GetSeconds()<<std::endl;
 
 
 	m_endProcess = Simulator::Now();
-	m_mutex.Lock();
 	--m_buffCount;
-	m_mutex.Unlock();
 } 
-void controllerApplication::ProcessHandover(lteEpcTag tag,int flag){
-	Ptr<Packet> packetSend = Create<Packet>();
-	lteEpcTag tagSend;
-	Ptr<Packet> packetSend1 = Create<Packet>();
-	lteEpcTag tagSend1;
-	tagSend.m_count = tag.m_count;
-	tagSend.setM_Handover();
-	tagSend1.setM_Handover();
+void controllerApplication::ProcessHandover(lteEpcTag tag,Ipv4Address ipadd){
 	std::cout<<"controller\t: ";
 	if(tag.m_status == (uint8_t)m_HandoverModifyBearerRequest){
 		std::cout<<"receive Modify Bearer Request from mme";
-		tagSend.setM_HandoverModifyBearerRequestToUgw();
-		packetSend->AddPacketTag(tagSend);
-	    controllerSendPacket(packetSend,flag);
+		setStatus(tag,(uint8_t)m_Handover,(uint8_t)m_HandoverModifyBearerRequestToUgw,ipadd);
+//		packetSend->AddPacketTag(tagSend);
+//	    controllerSendPacket(packetSend,flag);
 	}
 	else if(tag.m_status == (uint8_t)m_HandoverModifyBearerResponseToUgw){
 		std::cout<<"receive Modify Bearer Response from ugw";
-		tagSend.setM_HandoverModifyBearerResponse();
-		tagSend1.setM_HandoverEndMarkerToTargetEnb();
-		packetSend1->AddPacketTag(tagSend1);
-	    controllerSendPacket(packetSend1,flag);
+		setStatus(tag,(uint8_t)m_Handover,(uint8_t)m_HandoverModifyBearerResponse,ipadd);
+		setStatus(tag,(uint8_t)m_Handover,(uint8_t)m_HandoverEndMarkerToTargetEnb,ipadd);
+
+//		packetSend1->AddPacketTag(tagSend1);
+//	    controllerSendPacket(packetSend1,flag);
 	}
 
 
     std::cout<<"\t:tag number"<<tag.m_count<<"----------"<<Simulator::Now().GetSeconds()<<std::endl;
 	m_endProcess = Simulator::Now();
-	m_mutex.Lock();
 	--m_buffCount;
-	m_mutex.Unlock();
 }
-void controllerApplication::ProcessPacket(Ptr<Packet> packet,int flag){
+void controllerApplication::ProcessPacket(Ptr<Packet> packet,Ipv4Address ipadd){
+	
 	lteEpcTag tag;
 	packet->RemovePacketTag(tag);
 	if(tag.m_flag == (uint8_t)m_Session){
-		ProcessSession(tag,flag);	
+		ProcessSession(tag,ipadd);	
 	}
-    else if(tag.m_flag == (uint8_t)m_Handover){
-        ProcessHandover(tag,flag);
-    }
+	else if(tag.m_flag == (uint8_t)m_Handover){
+        	ProcessHandover(tag,ipadd);
+    	}
 
 	/*wulei*/
 	m_sendCount++;
 }
 void controllerApplication::RecvFromMmeSocket(Ptr<Socket> socket){
-	m_mutex.Lock();
-	if(m_buffCount < m_maxBuffSize){
 	++m_buffCount;
 	Address from;
   	Ptr<Packet> packet = socket->RecvFrom (from);
  	InetSocketAddress m_SocketSourceIp = InetSocketAddress::ConvertFrom (from);
+	Ipv4Address ipadd = m_SockSourceIp.GetIpv4();	
 
-	for(int i=0;i<4;++i){
-		if(m_SocketSourceIp.GetIpv4() == m_mmeControllerIfc[i].GetAddress(0)) m_SocketSourceIpFlag = i;
-		else if(m_SocketSourceIp.GetIpv4() == m_controllerUgwIfc[i].GetAddress(1)) m_SocketSourceIpFlag = i + 4;
-		
-	}
-
-    m_revCount++;
-	if(m_revCount == 1){
-		m_startRev = Simulator::Now();
-	}
-
-	Simulator::Schedule(Seconds(0.5),&controllerApplication::ProcessPacket,this,packet,m_SocketSourceIpFlag);
-//	ProcessPacket(packet);
-	}
-	else{
-		++m_lossBuff;
-	}
-	m_mutex.Unlock();
+	Simulator::Schedule(Seconds(0.5),&controllerApplication::ProcessPacket,this,packet,ipadd);
 }
-void controllerApplication::controllerSendPacket(Ptr<Packet> packetSend,int SocketSourceIpFlag){
-//        std::cout << "+++++++++++controllerSendPacket++++++++++" << std::endl;
-        switch (SocketSourceIpFlag){
-			case 0:
-				m_sendToUgwSocket[0]->SendTo(packetSend,0,InetSocketAddress(m_controllerUgwIfc[0].GetAddress(1),m_ugwPort));break;
-            case 1:
-				m_sendToUgwSocket[1]->SendTo(packetSend,0,InetSocketAddress(m_controllerUgwIfc[1].GetAddress(1),m_ugwPort));break;
-            case 2:
-				m_sendToUgwSocket[2]->SendTo(packetSend,0,InetSocketAddress(m_controllerUgwIfc[2].GetAddress(1),m_ugwPort));break;
-            case 3:
-				m_sendToUgwSocket[3]->SendTo(packetSend,0,InetSocketAddress(m_controllerUgwIfc[3].GetAddress(1),m_ugwPort));break;
-            case 4:
-				m_sendToMmeSocket[0]->SendTo(packetSend,0,InetSocketAddress(m_mmeControllerIfc[0].GetAddress(0),m_mmePort));break;
-            case 5:
-				m_sendToMmeSocket[1]->SendTo(packetSend,0,InetSocketAddress(m_mmeControllerIfc[1].GetAddress(0),m_mmePort));break;
-            case 6:
-				m_sendToMmeSocket[2]->SendTo(packetSend,0,InetSocketAddress(m_mmeControllerIfc[2].GetAddress(0),m_mmePort));break;
-            case 7:
-				m_sendToMmeSocket[3]->SendTo(packetSend,0,InetSocketAddress(m_mmeControllerIfc[3].GetAddress(0),m_mmePort));break;
-            default:
-                break;
-		}
-
+void controllerApplication::InstallAreaInfo(vector<lteEpcArea> area){
+	m_area = area;
 }
 
 }

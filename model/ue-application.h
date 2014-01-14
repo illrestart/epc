@@ -21,10 +21,11 @@ class ueApplication:public Application{
 		void DoDispose(void);
 	public:
 
-		ueApplication(Ptr<Node>,Ipv4InterfaceContainer,int);
+		ueApplication(Ptr<Node>,NodeContainer,Ipv4InterfaceContainer);
 		virtual ~ueApplication(void);
 		virtual void StartApplication();
 		virtual void StopApplication();
+		void SetStatus(lteEpcTag,uint8_t,uint8_t,InetSocketAddress);
 
 		void RecvFromEnbSocket(Ptr<Socket>);
 
@@ -35,10 +36,11 @@ class ueApplication:public Application{
 		void InitSocket();
 
 		Ptr<Node> m_ueNode;
-
-		Ipv4InterfaceContainer m_ueEnbIfc;
+		NodeContainer m_enbc;
+		Ipv4InterfaceContainer m_ifc;
 		int m_enbPort;
 		int m_port;
+		Ptr<Socket> m_socket;
 		Ptr<Socket> m_sendToEnbSocket;
 		Ptr<Socket> m_socketEnb;
 

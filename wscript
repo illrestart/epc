@@ -10,24 +10,20 @@ def build(bld):
     module = bld.create_ns3_module('epc', ['core','internet','applications','lte','network','netanim'])
     module.source = [
         
-        'model/epc.cc',
-                
-		
-	'model/ue-application.cc',
-	'model/enb-application.cc',
-	'model/mme-application.cc',
-	'model/controller-application.cc',
-	'model/ugw-application.cc',
-
-	'model/lte-tag.cc',
+        'model/epc.cc',            
+    	'model/ue-application.cc',
+    	'model/enb-application.cc',
+    	'model/mme-application.cc',
+    	'model/controller-application.cc',
+    	'model/ugw-application.cc',
+    	'model/lte-tag.cc',
         'model/signal.cc',
-	
-	'model/session-application.cc',
+    	'model/session-application.cc',
         'model/handover-application.cc',
-
+        'model/lte-epc-area.cc',
         'helper/epc-helper.cc',
         'helper/ltehelper.cc',
-        'helper/InitialModelHelper.cc'
+        'helper/InitialModelHelper.cc',
         ]
 
     module_test = bld.create_ns3_module_test_library('epc')
@@ -39,21 +35,16 @@ def build(bld):
     headers.module = 'epc'
     headers.source = [
         'model/epc.h',
-                
-		
-	'model/ue-application.h',
-	'model/enb-application.h',
-	'model/mme-application.h',
-	'model/controller-application.h',
-	'model/ugw-application.h',
-
-	'model/lte-tag.h',
-
+    	'model/ue-application.h',
+    	'model/enb-application.h',
+    	'model/mme-application.h',
+    	'model/controller-application.h',
+    	'model/ugw-application.h',
+    	'model/lte-tag.h',
         'model/signal.h',
-	
-	'model/session-application.h',
+    	'model/session-application.h',
         'model/handover-application.h',
-
+        'model/lte-epc-area.h',
         'helper/epc-helper.h',
         'helper/ltehelper.h',
         'helper/InitialModelHelper.h'

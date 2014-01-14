@@ -17,13 +17,44 @@ TypeId lteEpcTag::GetInstanceTypeId(void) const{
 }
 
 uint32_t lteEpcTag::GetSerializedSize(void) const{
-	return 4;
+	return 4 + 2 + getStrIp(m_sourceIp).length() + 1 + getStrIp(m_destIp).length() + 1;
+}	
+//set source ip
+void lteEpcTag::setSourceIp(Ipv4Address ip){
+	m_sourceIp = ip;
+}
+void lteEpcTag::setSourceIp(string ip){
+	const char *cp = ip.c_str();
+	m_sourceIp.Set(cp);
+}
+//set destination ip
+void lteEpcTag::setDestIp(Ipv4Address ip){
+	m_destIp = ip;
+}
+void lteEpcTag::setDestIp(string ip){
+	const char *cp = ip.c_str();
+	m_destIp.Set(cp);
+}
+//get string ip address from Ipv4Address
+string lteEpcTag::getStrIp(Ipv4Address ip){
+	stringstream ss;
+	string str;
+	ip.Ptrint(ss);
+	ss>>str;
+	return str;
 }
 void lteEpcTag::Serialize(TagBuffer i) const{
 	i.WriteU8(m_flag);
 	i.WriteU8(m_status);
 	i.WriteU8(m_count);
 	i.WriteU8(m_id);
+	string s,d;
+	s = getStrIp(m_sourceIp);
+	i.WriteU8(s.length());
+	i.Write((uint8_t *)s.c_str(),s.length()+1);
+	d = getStrIp(m_destIp);
+	i.WriteU8(d.length());
+	i.Write((uint8_t *)d.c_str(),d.length()+1);
 }
 
 void lteEpcTag::Deserialize(TagBuffer i){
@@ -31,7 +62,15 @@ void lteEpcTag::Deserialize(TagBuffer i){
 	m_status = i.ReadU8();
 	m_count = i.ReadU8();
 	m_id = i.ReadU8();
-	
+	int lensrc = i.ReadU8();
+	uint8_t* src = (uint8_t*)malloc(sizeof(1));
+	i.Read(src,lensrc + 1);
+	m_sourceIp.Set((char*)src);
+	uint8_t* dest = (uint8_t)malloc(sizeof(1));
+	int lendesc = i.ReadU8();
+	i.Read(dest,lendest + 1);
+	m_destIp.Set((char*)dest);
+
 }
 
 //void lteEpcTag::Print(std::ostream &os){}
