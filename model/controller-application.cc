@@ -103,6 +103,7 @@ void controllerApplication::StopApplication(){
 InetSocketAddress controllerApplication::getDestinationAddress(Ipv4Address ipadd){
 	uint32_t i;
 	for(std::vector<lteEpcArea>::iterator iter = m_area.begin(); iter != m_area.end(); ++iter){
+
 		for(i = 0; i < iter->m_mmec.GetN(); ++i){
 			if(ipadd == m_ifc.GetAddress(iter->m_mmec.Get(i)->GetId())){
 				return InetSocketAddress(m_ifc.GetAddress(iter->m_ugwc.Get(0)->GetId()),8086);
@@ -123,6 +124,7 @@ void controllerApplication::SetStatus(lteEpcTag tag,uint8_t flag,uint8_t status,
 	tag.m_status = status;
 	packet->AddPacketTag(tag);
 	InetSocketAddress isa= getDestinationAddress(ipadd);
+	std::cout<<isa.GetIpv4()<<std::endl;
 	m_socket->SendTo(packet,0,isa);
 }
 void controllerApplication::ProcessSession(lteEpcTag tag,Ipv4Address ipadd){
@@ -146,7 +148,6 @@ void controllerApplication::ProcessSession(lteEpcTag tag,Ipv4Address ipadd){
 
 
 	m_endProcess = Simulator::Now();
-	--m_buffCount;
 } 
 void controllerApplication::ProcessHandover(lteEpcTag tag,Ipv4Address ipadd){
 	std::cout<<"controller\t: ";
@@ -168,7 +169,6 @@ void controllerApplication::ProcessHandover(lteEpcTag tag,Ipv4Address ipadd){
 
     std::cout<<"\t:tag number"<<tag.m_count<<"----------"<<Simulator::Now().GetSeconds()<<std::endl;
 	m_endProcess = Simulator::Now();
-	--m_buffCount;
 }
 void controllerApplication::ProcessPacket(Ptr<Packet> packet,Ipv4Address ipadd){
 	
@@ -185,7 +185,6 @@ void controllerApplication::ProcessPacket(Ptr<Packet> packet,Ipv4Address ipadd){
 	m_sendCount++;
 }
 void controllerApplication::RecvFromMmeSocket(Ptr<Socket> socket){
-	++m_buffCount;
 	Address from;
   	Ptr<Packet> packet = socket->RecvFrom (from);
  	InetSocketAddress m_SocketSourceIp = InetSocketAddress::ConvertFrom (from);
