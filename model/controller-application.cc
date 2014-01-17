@@ -45,10 +45,10 @@ controllerApplication::controllerApplication(Ptr<Node> controllerNode,NodeContai
 	m_buffCount = 0;
 	m_lossBuff = 0;
 
-	for(int i=0;i<4;++i){
+/*	for(int i=0;i<4;++i){
 		m_mmeControllerIfc[i] = mmeControllerIfc[i];
 		m_controllerUgwIfc[i] = controllerUgwIfc[i];
-	}
+	}*/
 	InitSocket();
 	
 //	cthread = Create<SystemThread>(MakeCallback(&controllerApplication::,this));
@@ -100,20 +100,21 @@ void controllerApplication::StopApplication(){
 
 }
 //ues to define the destination address
-void controllerApplication::getDestinationAddress(Ipv4Address ipadd){
-	int i;
-	for(vector<lteEpcArea>::iterator iter = m_area.begin(); iter != m_area.end(); ++iter){
+InetSocketAddress controllerApplication::getDestinationAddress(Ipv4Address ipadd){
+	uint32_t i;
+	for(std::vector<lteEpcArea>::iterator iter = m_area.begin(); iter != m_area.end(); ++iter){
 		for(i = 0; i < iter->m_mmec.GetN(); ++i){
-			if(ipadd == ifc.GetAddress(iter->m_mmec.Get(i)->GetId())){
-				return InetSocketAddress(ifc.GetAddress(iter->m_ugwc.Get(0)->GetId()),8086);
+			if(ipadd == m_ifc.GetAddress(iter->m_mmec.Get(i)->GetId())){
+				return InetSocketAddress(m_ifc.GetAddress(iter->m_ugwc.Get(0)->GetId()),8086);
 			}
 		}
 		for(i = 0; i < iter->m_ugwc.GetN(); ++i){
-			if(ipadd == ifc.GetAddress(iter->m_ugwc.Get(i)->GetId())){
-				return InetSocketAddress(ifc.GetAddress(iter->m_mmec.Get(0)->GetId()),8086);
+			if(ipadd == m_ifc.GetAddress(iter->m_ugwc.Get(i)->GetId())){
+				return InetSocketAddress(m_ifc.GetAddress(iter->m_mmec.Get(0)->GetId()),8086);
 			}
 		}
 	}
+	return InetSocketAddress(Ipv4Address("0.0.0.0"),0);
 }
 //use to set the tag in packet and then send them to designaed address
 void controllerApplication::SetStatus(lteEpcTag tag,uint8_t flag,uint8_t status,Ipv4Address ipadd){
@@ -130,14 +131,14 @@ void controllerApplication::ProcessSession(lteEpcTag tag,Ipv4Address ipadd){
 		std::cout<<"receive uplinkdata ";
 	}
 	else{
-		tagSend.setM_Session();
+		//tagSend.setM_Session();
 		if(tag.m_status == (uint8_t)m_SessionModifyBearerRequest){
 			std::cout<<"rceive mme  modifybearerrequest ";
-			setStatus(tag,(uint8_t)m_Session,(uint8_t)m_SessionModifyBearerRequest,ipadd)
+			SetStatus(tag,(uint8_t)m_Session,(uint8_t)m_SessionModifyBearerRequest,ipadd);
 		}
 		else if(tag.m_status == (uint8_t)m_SessionModifyBearerResponse){
 			std::cout<<"rceive ugw modifycearerreqsponse ";
-			setStatus(tag,(uint8_t)m_Session,(uint8_t)m_SessionModifyBearerResponse,ipadd)
+			SetStatus(tag,(uint8_t)m_Session,(uint8_t)m_SessionModifyBearerResponse,ipadd);
 		}
 
 	}
@@ -151,14 +152,14 @@ void controllerApplication::ProcessHandover(lteEpcTag tag,Ipv4Address ipadd){
 	std::cout<<"controller\t: ";
 	if(tag.m_status == (uint8_t)m_HandoverModifyBearerRequest){
 		std::cout<<"receive Modify Bearer Request from mme";
-		setStatus(tag,(uint8_t)m_Handover,(uint8_t)m_HandoverModifyBearerRequestToUgw,ipadd);
+		SetStatus(tag,(uint8_t)m_Handover,(uint8_t)m_HandoverModifyBearerRequestToUgw,ipadd);
 //		packetSend->AddPacketTag(tagSend);
 //	    controllerSendPacket(packetSend,flag);
 	}
 	else if(tag.m_status == (uint8_t)m_HandoverModifyBearerResponseToUgw){
 		std::cout<<"receive Modify Bearer Response from ugw";
-		setStatus(tag,(uint8_t)m_Handover,(uint8_t)m_HandoverModifyBearerResponse,ipadd);
-		setStatus(tag,(uint8_t)m_Handover,(uint8_t)m_HandoverEndMarkerToTargetEnb,ipadd);
+		SetStatus(tag,(uint8_t)m_Handover,(uint8_t)m_HandoverModifyBearerResponse,ipadd);
+		SetStatus(tag,(uint8_t)m_Handover,(uint8_t)m_HandoverEndMarkerToTargetEnb,ipadd);
 
 //		packetSend1->AddPacketTag(tagSend1);
 //	    controllerSendPacket(packetSend1,flag);
@@ -188,11 +189,11 @@ void controllerApplication::RecvFromMmeSocket(Ptr<Socket> socket){
 	Address from;
   	Ptr<Packet> packet = socket->RecvFrom (from);
  	InetSocketAddress m_SocketSourceIp = InetSocketAddress::ConvertFrom (from);
-	Ipv4Address ipadd = m_SockSourceIp.GetIpv4();	
+	Ipv4Address ipadd = m_SocketSourceIp.GetIpv4();	
 
 	Simulator::Schedule(Seconds(0.5),&controllerApplication::ProcessPacket,this,packet,ipadd);
 }
-void controllerApplication::InstallAreaInfo(vector<lteEpcArea> area){
+void controllerApplication::InstallAreaInfo(std::vector<lteEpcArea> area){
 	m_area = area;
 }
 

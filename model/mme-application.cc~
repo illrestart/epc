@@ -18,12 +18,12 @@ void mmeApplication::DoDispose(void){
 	NS_LOG_FUNCTION(this);
 }
 
-mmeApplication::mmeApplication(Ptr<Node> mmeNode,Ipv4InterfaceContainer enbMmeIfc,int enbport,Ipv4InterfaceContainer mmeControllerIfc,int controllerport)
+mmeApplication::mmeApplication(Ptr<Node> mmeNode,NodeContainer mmec,NodeContainer enbc,NodeContainer controllerc,Ipv4InterfaceContainer ifc)
 	:m_mmeNode(mmeNode),
-	m_enbMmeIfc(enbMmeIfc),
-        m_mmeControllerIfc(mmeControllerIfc),
-	m_enbPort(enbport),
-	m_controllerPort(controllerport)
+	m_mmec(mmec),
+        m_enbc(enbc),
+	m_controllerc(controllerc),
+	m_ifc(ifc)
 {
 	m_port = 8086;
 	InitSocket();
@@ -46,74 +46,65 @@ void mmeApplication::InitSendSocket(){
 	m_sendToControllerSocket->Bind(InetSocketAddress(m_mmeControllerIfc.GetAddress(0),8084));
 }
 void mmeApplication::InitSocket(){
-	InitRecvSocket();
+//	InitRecvSocket();
 
-	InitSendSocket();
+//	InitSendSocket();
+	m_socket = Socket::CreateSocket(m_mmeNode,TypeId::LookupByName("ns3::UdpSocketFactory"));
+	m_socket->Bind(InetSocketAddress(m_ifc.GetAddress(m_mmeNode->GetId()),8086));
+
 }
 
 void mmeApplication::StartApplication(){
 	NS_LOG_FUNCTION(this);	
-	m_socketEnb->SetRecvCallback(MakeCallback(&mmeApplication::RecvFromEnbSocket,this));
-	m_socketController->SetRecvCallback(MakeCallback(&mmeApplication::RecvFromEnbSocket,this));
+//	m_socketEnb->SetRecvCallback(MakeCallback(&mmeApplication::RecvFromEnbSocket,this));
+//	m_socketController->SetRecvCallback(MakeCallback(&mmeApplication::RecvFromEnbSocket,this));
+	m_socket->SetRecvCallback(MakeCallback(&mmeApplication::RecvFromEnbSocket,this));
 }
 void mmeApplication::StopApplication(){
 	NS_LOG_FUNCTION(this);	
 }
+//use to set the tag in packet and then send them to designaed address
+void mmeApplication::SetStatus(lteEpcTag tag,uint8_t flag,uint8_t status,InetSocketAddress isa){
+	Ptr<Packet> packet = Create<Packet>();
+	tag.m_flag = flag;
+	tag.m_status = status;
+	packet->AddPacketTag(tag);
+	m_socket->SendTo(packet,0,isa);
+}
 void mmeApplication::ProcessSession(lteEpcTag tag){
-	Ptr<Packet> packetSend = Create<Packet>();
-	lteEpcTag tagSend;
-	tagSend.m_count = tag.m_count;
 	std::cout<<"mme\t\t: ";
 	if(tag.m_status == (uint8_t)m_SessionServiceRequest){
 		std::cout<<"receive ue service Request ";
-		tagSend.setM_Session();
-		tagSend.setM_SessionInitialContextSetupRequest();
-		packetSend->AddPacketTag(tagSend);
-		m_sendToEnbSocket->SendTo(packetSend,0,InetSocketAddress(m_enbMmeIfc.GetAddress(0),m_enbPort));
+		SetStatus(tag,(uint8_t)m_Session,(uint8_t)m_SessionInitialContextSetupRequest,InetSocketAddress(m_ifc.GetAddress(m_enbc.Get(0)->GetId()),8086));
 	}
 	else if(tag.m_status == (uint8_t)m_SessionUplinkData){
 		std::cout<<"receive enb uplinkdata ";
-		tagSend.setM_Session();
-		tagSend.setM_SessionUplinkData();
-		packetSend->AddPacketTag(tagSend);
-		m_sendToControllerSocket->SendTo(packetSend,0,InetSocketAddress(m_mmeControllerIfc.GetAddress(1),m_controllerPort));
+		SetStatus(tag,(uint8_t)m_Session,(uint8_t)m_SessionUplinkData,InetSocketAddress(m_ifc.GetAddress(m_controllerc.Get(0)->GetId()),8086));
 	}
 	else if(tag.m_status == (uint8_t)m_SessionInitialContextSetupComplete){
 		std::cout<<"rceive enb contextsetupcomplete ";
-		tagSend.setM_Session();
-		tagSend.setM_SessionModifyBearerRequest();
-		packetSend->AddPacketTag(tagSend);
-		m_sendToControllerSocket->SendTo(packetSend,0,InetSocketAddress(m_mmeControllerIfc.GetAddress(1),m_controllerPort));
+		SetStatus(tag,(uint8_t)m_Session,(uint8_t)m_SessionModifyBearerRequest,InetSocketAddress(m_ifc.GetAddress(m_controllerc.Get(0)->GetId()),8086));
 	}
 	else if(tag.m_status == (uint8_t)m_SessionModifyBearerResponse){
 		std::cout<<"receive controller modify bearer response ";
 	}
-	std::cout<<"\t:tag number"<<tag.m_count<<"----------"<<Simulator::Now()<<std::endl;
+	std::cout<<"\t:tag number"<<tag.m_count<<"----------"<<Simulator::Now().GetSeconds()<<std::endl;
 } 
 
 void  mmeApplication::ProcessHandover(lteEpcTag tag){
-	Ptr<Packet> packetSend = Create<Packet>();
-	lteEpcTag tagSend;
-	tagSend.m_count = tag.m_count;
 	std::cout<<"mme\t\t: ";
 	if(tag.m_status == (uint8_t)m_HandoverPathSwitchRequest){
 		std::cout<<"receive Path Switch Request from TargetEnb";
-		tagSend.setM_Handover();
-		tagSend.setM_HandoverModifyBearerRequest();
-		packetSend->AddPacketTag(tagSend);
-		m_sendToControllerSocket->SendTo(packetSend,0,InetSocketAddress(m_mmeControllerIfc.GetAddress(1),m_controllerPort));
+		SetStatus(tag,(uint8_t)m_Handover,(uint8_t)m_HandoverModifyBearerRequest,InetSocketAddress(ifc.GetAddress(m_controllerc.Get(0)->GetId()),8086));
 	}
         else if(tag.m_status == (uint8_t)m_HandoverModifyBearerResponse){
                std::cout<<"receive Modify Bearer Response from controller";
         }
         else if(tag.m_status == (uint8_t)m_HandoverEndMarkerToTargetEnb){
 		std::cout<<"receive End Marker To TargetEnb from controller";
-		tagSend.setM_Handover();
-		tagSend.setM_HandoverEndMarkerToTargetEnb();
-		packetSend->AddPacketTag(tagSend);
-		m_sendToEnbSocket->SendTo(packetSend,0,InetSocketAddress(m_enbMmeIfc.GetAddress(0),m_enbPort));
+		SetStatus(tag,(uint8_t)m_Handover,(uint8_t)m_HandoverEndMarkerToTargetEnb,InetSocketAddress(ifc.GetAddress(m_enbc.Get(0)->GetId()),8086));
         }
-        std::cout<<"\t:tag number"<<tag.m_count<<"----------"<<Simulator::Now()<<std::endl;
+        std::cout<<"\t:tag number"<<tag.m_count<<"----------"<<Simulator::Now().GetSeconds()<<std::endl;
 }
 
 void mmeApplication::ProcessPacket(Ptr<Packet> packet){

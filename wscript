@@ -23,7 +23,7 @@ def build(bld):
         'model/lte-epc-area.cc',
         'helper/epc-helper.cc',
         'helper/ltehelper.cc',
-        'helper/InitialModelHelper.cc',
+       # 'helper/InitialModelHelper.cc',
         ]
 
     module_test = bld.create_ns3_module_test_library('epc')
@@ -47,7 +47,7 @@ def build(bld):
         'model/lte-epc-area.h',
         'helper/epc-helper.h',
         'helper/ltehelper.h',
-        'helper/InitialModelHelper.h'
+        #'helper/InitialModelHelper.h'
         ]
 
     if bld.env.ENABLE_EXAMPLES:

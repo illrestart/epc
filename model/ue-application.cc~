@@ -18,55 +18,61 @@ void ueApplication::DoDispose(void){
 	NS_LOG_FUNCTION(this);
 }
 
-ueApplication::ueApplication(Ptr<Node> ueNode,Ipv4InterfaceContainer ueEnbIfc,int enbport)
+ueApplication::ueApplication(Ptr<Node> ueNode,NodeContainer enbc,Ipv4InterfaceContainer ifc)
 	:m_ueNode(ueNode),
-	m_ueEnbIfc(ueEnbIfc),
-	m_enbPort(enbport)
+	m_enbc(enbc),
+	m_ifc(ifc)
 {
 	m_port = 8086;
-	m_signal.wait();
 	InitSocket();
-	
 }
 
 ueApplication::~ueApplication(void){
 	NS_LOG_FUNCTION(this);
 }
 void ueApplication::InitRecvSocket(){
-	m_socketEnb = Socket::CreateSocket(m_ueNode,TypeId::LookupByName("ns3::UdpSocketFactory"));
-	m_socketEnb->Bind(InetSocketAddress(m_ueEnbIfc.GetAddress(0),m_port));
+	TypeId tid = TypeId::LookupByName("ns3::UdpSocketFactory");
+	m_socketEnb = Socket::CreateSocket(m_ueNode,tid);
+	m_socketEnb->Bind(InetSocketAddress(m_ifc.GetAddress(m_ueNode->GetId()),m_port));
 }
 void ueApplication::InitSendSocket(){
-	m_sendToEnbSocket = Socket::CreateSocket(m_ueNode,TypeId::LookupByName("ns3::UdpSocketFactory"));
-	m_sendToEnbSocket->Bind(InetSocketAddress(m_ueEnbIfc.GetAddress(0),8085));
+	TypeId tid = TypeId::LookupByName("ns3::UdpSocketFactory");
+	m_sendToEnbSocket = Socket::CreateSocket(m_ueNode,tid);
+	m_sendToEnbSocket->Bind(InetSocketAddress(m_ifc.GetAddress(m_ueNode->GetId()),8085));
 }
 void ueApplication::InitSocket(){
-	InitRecvSocket();
-
+/*	InitRecvSocket();
 	InitSendSocket();
+*/
+	TypeId tid = TypeId::LookupByName("ns3::UdpSocketFactory");
+	m_socket = Socket::CreateSocket(m_ueNode,tid);
+	m_socket->Bind(InetSocketAddress(m_ifc.GetAddress(m_ueNode->GetId()),m_port));
 }
 
 void ueApplication::StartApplication(){
 	NS_LOG_FUNCTION(this);	
-	m_socketEnb->SetRecvCallback(MakeCallback(&ueApplication::RecvFromEnbSocket,this));
+//	m_socketEnb->SetRecvCallback(MakeCallback(&ueApplication::RecvFromEnbSocket,this));
+	m_socket->SetRecvCallback(MakeCallback(&ueApplication::RecvFromEnbSocket,this));
 }
 void ueApplication::StopApplication(){
 	NS_LOG_FUNCTION(this);	
 }
 
+//use to set the tag in packet and then send them to designaed address
+void ueApplication::SetStatus(lteEpcTag tag,uint8_t flag,uint8_t status,InetSocketAddress isa){
+	Ptr<Packet> packet = Create<Packet>();
+	tag.m_flag = flag;
+	tag.m_status = status;
+	packet->AddPacketTag(tag);
+	m_socket->SendTo(packet,0,isa);
+}
 void ueApplication::ProcessSession(lteEpcTag tag){
-	Ptr<Packet> packetSend = Create<Packet>();
-	lteEpcTag tagSend;
-	tagSend.m_count = tag.m_count;
 	std::cout<<"ue\t\t: ";
 	if(tag.m_status == (uint8_t)m_SessionRadioBearerEstablishment){
 		std::cout<<"receive enb radiobeareestablishment ";
-		tagSend.setM_Session();
-		tagSend.setM_SessionUplinkData();
-		packetSend->AddPacketTag(tagSend);
-		m_sendToEnbSocket->SendTo(packetSend,0,InetSocketAddress(m_ueEnbIfc.GetAddress(1),m_enbPort));
+		SetStatus(tag,(uint8_t)m_Session,(uint8_t)m_SessionUplinkData,InetSocketAddress(m_ifc.GetAddress(m_enbc.Get(0)->GetId()),8086));
 	}
-	std::cout<<"\t:tag number"<<tag.m_count<<"----------"<<Simulator::Now()<<std::endl;
+//	std::cout<<"\t:tag number"<<tag.m_count<<"----------"<<Simulator::Now().GetSeconds()<<std::endl;
 } 
 void ueApplication::ProcessPacket(Ptr<Packet> packet){
 	lteEpcTag tag;

@@ -17,8 +17,8 @@ void SessionApplication::DoDispose(void){
         std::cout<<"--------Session Send Count---------:"<<sessionCount<<std::endl;
 }
 
-SessionApplication::SessionApplication(NodeContainer uec,NodeContainer enbc,Ipv4InterfaceContainer ifc,int totalNumber, float rate,float time)
-	:m_uec(uec),
+SessionApplication::SessionApplication(Ptr<Node> ue,NodeContainer enbc,Ipv4InterfaceContainer ifc,int totalNumber, float rate,float time)
+	:m_ue(ue),
 	m_enbc(enbc),
 	m_ifc(ifc),
 	m_socket(0),
@@ -37,6 +37,7 @@ SessionApplication::SessionApplication(NodeContainer uec,NodeContainer enbc,Ipv4
 		m_interval =1.0 / (totalNumber * rate);
 		m_flag = true;
 	}
+//	std::cout<<"totalNumber"<<m_totalNumber<<" rate"<<m_rate<<" time"<<m_time<<" flag"<<m_flag<<std::endl;
 }
 SessionApplication::~SessionApplication(void){
 	NS_LOG_FUNCTION(this);
@@ -45,8 +46,8 @@ SessionApplication::~SessionApplication(void){
 void SessionApplication::StartApplication(){
 	NS_LOG_FUNCTION(this);
 	if(! m_socket){
-		m_socket = Socket::CreateSocket(m_node,TypeId::LookupByName("ns3::UdpSocketFactory"));
-		m_socket->Bind(InetSocketAddress(m_ifc.GetAddress(m_uec.Get(0)->GetId()),8086));
+		m_socket = Socket::CreateSocket(m_ue,TypeId::LookupByName("ns3::UdpSocketFactory"));
+		m_socket->Bind(InetSocketAddress(m_ifc.GetAddress(m_ue->GetId()),8086));
 	}
 	ScheduleStartEvent();
 }
@@ -67,7 +68,6 @@ void SessionApplication::StartSending(){
 		std::cout<<m_lastStartTime<<std::endl;
 		m_lastStartTime = Seconds(tmpTime);
 		Simulator::Schedule(m_lastStartTime,&SessionApplication::sendPacket,this);
-
 	}
 	std::cout<<"session++++++++++++++++++++"<<m_lastStartTime<<std::endl;
 
@@ -79,8 +79,11 @@ void SessionApplication::sendPacket(){
 	tag.setM_Session();
 	tag.setM_SessionServiceRequest();
 	tag.m_count = count;
+	std::string str = "1.1.1.1";
+	tag.setSourceIp(str);
+	tag.setDestIp(str);
 	packet->AddPacketTag(tag);
-	m_socket->SendTo(packet,0,InetSocketAddress(m_ifc.GetAddress(m_enb.Get(0)->GetId()),8086));
+	m_socket->SendTo(packet,0,InetSocketAddress(m_ifc.GetAddress(m_enbc.Get(0)->GetId()),8086));
 	std::cout<<count++<<" send packet:"<<Simulator::Now()<<std::endl;
 	sessionCount++;
 }

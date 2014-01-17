@@ -41,6 +41,8 @@ class enbApplication:public Application{
 		void SendInitialContextSetupComplete(Ptr<Socket>);
 
 		Ptr<Node> m_enbNode;
+		NodeContainer m_enbc;
+		NodeContainer m_uec;
 		NodeContainer m_mmec;
 		NodeContainer m_ugwc;
 

@@ -50,7 +50,7 @@ void mmeApplication::InitSocket(){
 
 //	InitSendSocket();
 	m_socket = Socket::CreateSocket(m_mmeNode,TypeId::LookupByName("ns3::UdpSocketFactory"));
-	m_socket->Bind(InetSocketAddress(m_ifc.GetAddress(m_mmeNode->GedId()),8086));
+	m_socket->Bind(InetSocketAddress(m_ifc.GetAddress(m_mmeNode->GetId()),8086));
 
 }
 
@@ -75,15 +75,15 @@ void mmeApplication::ProcessSession(lteEpcTag tag){
 	std::cout<<"mme\t\t: ";
 	if(tag.m_status == (uint8_t)m_SessionServiceRequest){
 		std::cout<<"receive ue service Request ";
-		SetStatus(tag,(uint8_t)m_Session,(uint8_t)m_SessionInitialContextSetupRequest,InetSocketAddress(ifc.GetAddress(m_enbc.Get(0)->GetId()),8086));
+		SetStatus(tag,(uint8_t)m_Session,(uint8_t)m_SessionInitialContextSetupRequest,InetSocketAddress(m_ifc.GetAddress(m_enbc.Get(0)->GetId()),8086));
 	}
 	else if(tag.m_status == (uint8_t)m_SessionUplinkData){
 		std::cout<<"receive enb uplinkdata ";
-		SetStatus(tag,(uint8_t)m_Session,(uint8_t)m_SessionUplinkData,InetSocketAddress(ifc.GetAddress(m_controllerc.Get(0)->GetId()),8086));
+		SetStatus(tag,(uint8_t)m_Session,(uint8_t)m_SessionUplinkData,InetSocketAddress(m_ifc.GetAddress(m_controllerc.Get(0)->GetId()),8086));
 	}
 	else if(tag.m_status == (uint8_t)m_SessionInitialContextSetupComplete){
 		std::cout<<"rceive enb contextsetupcomplete ";
-		SetStatus(tag,(uint8_t)m_Session,(uint8_t)m_SessionModifyBearerRequest,InetSocketAddress(ifc.GetAddress(m_controllerc.Get(0)->GetId()),8086));
+		SetStatus(tag,(uint8_t)m_Session,(uint8_t)m_SessionModifyBearerRequest,InetSocketAddress(m_ifc.GetAddress(m_controllerc.Get(0)->GetId()),8086));
 	}
 	else if(tag.m_status == (uint8_t)m_SessionModifyBearerResponse){
 		std::cout<<"receive controller modify bearer response ";
@@ -95,14 +95,14 @@ void  mmeApplication::ProcessHandover(lteEpcTag tag){
 	std::cout<<"mme\t\t: ";
 	if(tag.m_status == (uint8_t)m_HandoverPathSwitchRequest){
 		std::cout<<"receive Path Switch Request from TargetEnb";
-		SetStatus(tag,(uint8_t)m_Handover,(uint8_t)m_HandoverModifyBearerRequest,InetSocketAddress(ifc.GetAddress(m_controllerc.Get(0)->GetId()),8086));
+		SetStatus(tag,(uint8_t)m_Handover,(uint8_t)m_HandoverModifyBearerRequest,InetSocketAddress(m_ifc.GetAddress(m_controllerc.Get(0)->GetId()),8086));
 	}
         else if(tag.m_status == (uint8_t)m_HandoverModifyBearerResponse){
                std::cout<<"receive Modify Bearer Response from controller";
         }
         else if(tag.m_status == (uint8_t)m_HandoverEndMarkerToTargetEnb){
 		std::cout<<"receive End Marker To TargetEnb from controller";
-		SetStatus(tag,(uint8_t)m_Handover,(uint8_t)m_HandoverEndMarkerToTargetEnb,InetSocketAddress(ifc.GetAddress(m_enbc.Get(0)->GetId()),8086));
+		SetStatus(tag,(uint8_t)m_Handover,(uint8_t)m_HandoverEndMarkerToTargetEnb,InetSocketAddress(m_ifc.GetAddress(m_enbc.Get(0)->GetId()),8086));
         }
         std::cout<<"\t:tag number"<<tag.m_count<<"----------"<<Simulator::Now().GetSeconds()<<std::endl;
 }

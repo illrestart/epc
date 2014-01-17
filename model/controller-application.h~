@@ -11,8 +11,14 @@
 #include "ns3/internet-module.h"
 #include "ns3/packet.h"
 #include "ns3/network-module.h"
+#include "ns3/lte-epc-area.h"
+
 namespace ns3{
 
+class packFlag{
+	Ptr<Packet> m_p;
+	int m_IpFlag;	
+};
 class controllerApplication:public Application{
 	public:
 		static TypeId GetTypeId(void);
@@ -21,55 +27,46 @@ class controllerApplication:public Application{
 	public:
 
 //		controllerApplication(Ptr<Node>,Ipv4InterfaceContainer,Ipv4InterfaceContainer,int,int);
-                controllerApplication(Ptr<Node> controllerNode,Ipv4InterfaceContainer mmeControllerIfc[],Ipv4InterfaceContainer controllerUgwIfc[],int,int);
+                controllerApplication(Ptr<Node>,NodeContainer,NodeContainer,Ipv4InterfaceContainer);
 
 		virtual ~controllerApplication(void);
 		virtual void StartApplication();
 		virtual void StopApplication();
+
+		void SetStatus(lteEpcTag,uint8_t,uint8_t,Ipv4Address);
+		void InstallAreaInfo(std::vector<lteEpcArea>);
+		InetSocketAddress getDestinationAddress(Ipv4Address);
+
 		void RecvFromMmeSocket(Ptr<Socket>);
                 void RecvFromUgwSocket(Ptr<Socket>);
-		void ProcessPacket(Ptr<Packet>);
-		void ProcessSession(lteEpcTag);
-		void ProcessHandover(lteEpcTag);
+		void ProcessPacket(Ptr<Packet>,Ipv4Address);
+		void ProcessSession(lteEpcTag,Ipv4Address);
+		void ProcessHandover(lteEpcTag,Ipv4Address);
 		void InitRecvSocket();
 		void InitSendSocket();
 		void InitSocket();
 
-                void controllerSendPacket(Ptr<Packet>); //controller send packet to MME or UGW
 
 		Ptr<Node> m_controllerNode;
+		NodeContainer m_mmec;
+		NodeContainer m_ugwc;
 
-		Ipv4InterfaceContainer m_mmeControllerIfc1;
-                Ipv4InterfaceContainer m_controllerUgwIfc1;
-		Ipv4InterfaceContainer m_mmeControllerIfc2;
-                Ipv4InterfaceContainer m_controllerUgwIfc2;
-		Ipv4InterfaceContainer m_mmeControllerIfc3;
-                Ipv4InterfaceContainer m_controllerUgwIfc3;
-		Ipv4InterfaceContainer m_mmeControllerIfc4;
-                Ipv4InterfaceContainer m_controllerUgwIfc4;
+		Ipv4InterfaceContainer m_mmeControllerIfc[4];
+		Ipv4InterfaceContainer m_controllerUgwIfc[4];
+		Ipv4InterfaceContainer m_ifc;
 
 		int m_mmePort;
 		int m_ugwPort;
 		int m_port;
 
-		Ptr<Socket> m_sendToMmeSocket1;
-		Ptr<Socket> m_sendToUgwSocket1;
-		Ptr<Socket> m_socketMme1;
-		Ptr<Socket> m_socketUgw1;
-		Ptr<Socket> m_sendToMmeSocket2;
-		Ptr<Socket> m_sendToUgwSocket2;
-		Ptr<Socket> m_socketMme2;
-		Ptr<Socket> m_socketUgw2;
-		Ptr<Socket> m_sendToMmeSocket3;
-		Ptr<Socket> m_sendToUgwSocket3;
-		Ptr<Socket> m_socketMme3;
-		Ptr<Socket> m_socketUgw3;
-		Ptr<Socket> m_sendToMmeSocket4;
-		Ptr<Socket> m_sendToUgwSocket4;
-		Ptr<Socket> m_socketMme4;
-		Ptr<Socket> m_socketUgw4;
+		Ptr<Socket> m_socketMme[4];
+		Ptr<Socket> m_socketUgw[4];
+		Ptr<Socket> m_sendToMmeSocket[4];
+		Ptr<Socket> m_sendToUgwSocket[4];
+		Ptr<Socket> m_socket;
 
-		std::vector< Ptr<Packet> > m_vec;
+		std::vector< packFlag > m_vec;
+		packFlag m_packflag;
 		SystemMutex m_mutex;
 
 		/*wulei*/
@@ -79,8 +76,14 @@ class controllerApplication:public Application{
 		Time m_endProcess;	//the time that controller process the last packet
              
                 
-                int m_SocketSourceIpFlag = 0;
+        int m_SocketSourceIpFlag;
 //                InetSocketAddress m_SocketSourceIp; //the socket source ip
+		int m_maxBuffSize;
+		int m_buffCount;
+		int m_lossBuff;
+
+//area info 
+		std::vector<lteEpcArea> m_area;
 };
 
 }

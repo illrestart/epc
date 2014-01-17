@@ -9,6 +9,7 @@
 #include "ns3/inet-socket-address.h"
 #include "ns3/event-id.h"
 #include "ns3/data-rate.h"
+#include "ns3/internet-module.h"
 
 namespace ns3{
 
@@ -19,7 +20,7 @@ class HandoverApplication:public Application{
 			void DoDispose(void);
 		public:
 
-			HandoverApplication(NodeContainer,NodeContainer,Ipv4InterfaceContainer,int,float,float);
+			HandoverApplication(Ptr<Node>,NodeContainer,Ipv4InterfaceContainer,int,float,float);
 			virtual ~HandoverApplication(void);
 			virtual void StartApplication();
 			virtual void StopApplication();
@@ -30,12 +31,12 @@ class HandoverApplication:public Application{
 			void StartSending();
 			void sendPacket();
 
-			NodeContainer m_uec;
+			Ptr<Node> m_ue;
 			NodeContainer m_enbc;
 			Ipv4InterfaceContainer m_ifc;
 			Ptr<Node> m_node;
-			InetSocketAddress m_remote;
-			InetSocketAddress m_local;
+		//	InetSocketAddress m_remote;
+		//	InetSocketAddress m_local;
 			Ptr<Socket> m_socket;
 			Time m_lastStartTime;
 			EventId m_startSendEvent;

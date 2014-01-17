@@ -15,15 +15,24 @@ TypeId lteEpcTag::GetTypeId(void){
 TypeId lteEpcTag::GetInstanceTypeId(void) const{
 	return GetTypeId();
 }
-
-uint32_t lteEpcTag::GetSerializedSize(void) const{
-	return 4 + 2 + getStrIp(m_sourceIp).length() + 1 + getStrIp(m_destIp).length() + 1;
+//get string ip address from Ipv4Address
+std::string getStrIp(Ipv4Address ip){
+	std::stringstream ss;
+	std::string str;
+	ip.Print(ss);
+	ss>>str;
+	return str;
+}
+uint32_t lteEpcTag::GetSerializedSize() const{
+	std::string src = getStrIp(m_sourceIp);
+	std::string dst = getStrIp(m_destIp);
+	return 4 + 2 + src.length() + 1 + dst.length() + 1;
 }	
 //set source ip
 void lteEpcTag::setSourceIp(Ipv4Address ip){
 	m_sourceIp = ip;
 }
-void lteEpcTag::setSourceIp(string ip){
+void lteEpcTag::setSourceIp(std::string ip){
 	const char *cp = ip.c_str();
 	m_sourceIp.Set(cp);
 }
@@ -31,24 +40,16 @@ void lteEpcTag::setSourceIp(string ip){
 void lteEpcTag::setDestIp(Ipv4Address ip){
 	m_destIp = ip;
 }
-void lteEpcTag::setDestIp(string ip){
+void lteEpcTag::setDestIp(std::string ip){
 	const char *cp = ip.c_str();
 	m_destIp.Set(cp);
-}
-//get string ip address from Ipv4Address
-string lteEpcTag::getStrIp(Ipv4Address ip){
-	stringstream ss;
-	string str;
-	ip.Ptrint(ss);
-	ss>>str;
-	return str;
 }
 void lteEpcTag::Serialize(TagBuffer i) const{
 	i.WriteU8(m_flag);
 	i.WriteU8(m_status);
 	i.WriteU8(m_count);
 	i.WriteU8(m_id);
-	string s,d;
+	std::string s,d;
 	s = getStrIp(m_sourceIp);
 	i.WriteU8(s.length());
 	i.Write((uint8_t *)s.c_str(),s.length()+1);
@@ -65,11 +66,11 @@ void lteEpcTag::Deserialize(TagBuffer i){
 	int lensrc = i.ReadU8();
 	uint8_t* src = (uint8_t*)malloc(sizeof(1));
 	i.Read(src,lensrc + 1);
-	m_sourceIp.Set((char*)src);
-	uint8_t* dest = (uint8_t)malloc(sizeof(1));
-	int lendesc = i.ReadU8();
+	m_sourceIp.Set((char *)src);
+	uint8_t* dest = (uint8_t*)malloc(sizeof(1));
+	int lendest = i.ReadU8();
 	i.Read(dest,lendest + 1);
-	m_destIp.Set((char*)dest);
+	m_destIp.Set((char *)dest);
 
 }
 

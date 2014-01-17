@@ -50,7 +50,7 @@ void ugwApplication::InitSocket(){
 
 //	InitSendSocket();
 	m_socket  = Socket::CreateSocket(m_ugwNode,TypeId::LookupByName("ns3::UdpSocketFactory"));
-	m_socket->Bind(InetSocketAddress(ifc.GetAddress(m_ugwNode->GetId()),8086);
+	m_socket->Bind(InetSocketAddress(m_ifc.GetAddress(m_ugwNode->GetId()),8086));
 }
 
 void ugwApplication::StartApplication(){
@@ -75,7 +75,7 @@ void ugwApplication::ProcessSession(lteEpcTag tag){
 	std::cout<<"ugw\t\t: ";
 	if(tag.m_status == (uint8_t)m_SessionModifyBearerRequest){
 		std::cout<<"receive controller modifybearerrequest ";
-		SetStatus(tag,(uint8_t)m_Session,(uint8_t)m_SessionModifyBearerResponse,InetSocketAddress(ifc.GetAddress(m_controllerc.Get(0)->GetId()),8086));
+		SetStatus(tag,(uint8_t)m_Session,(uint8_t)m_SessionModifyBearerResponse,InetSocketAddress(m_ifc.GetAddress(m_controllerc.Get(0)->GetId()),8086));
 	}
 	std::cout<<"\t:tag number"<<tag.m_count<<"----------"<<Simulator::Now().GetSeconds()<<std::endl;
 } 
@@ -84,7 +84,7 @@ void ugwApplication::ProcessHandover(lteEpcTag tag){
 	std::cout<<"ugw\t\t: ";
 	if(tag.m_status == (uint8_t)m_HandoverModifyBearerRequestToUgw){
 		std::cout<<"receive Modify Bearer Request from controller";
-		SetStatus(tag,(uint8_t)m_Handover,(uint8_t)m_HandoverModifyBearerResponseToUgw,InetSocketAddress(ifc.GetAddress(m_controllerc.Get(0)->GetId()),8086));
+		SetStatus(tag,(uint8_t)m_Handover,(uint8_t)m_HandoverModifyBearerResponseToUgw,InetSocketAddress(m_ifc.GetAddress(m_controllerc.Get(0)->GetId()),8086));
 	}
 	std::cout<<"\t:tag number"<<tag.m_count<<"----------"<<Simulator::Now().GetSeconds()<<std::endl;
 } 

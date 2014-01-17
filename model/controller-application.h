@@ -11,7 +11,8 @@
 #include "ns3/internet-module.h"
 #include "ns3/packet.h"
 #include "ns3/network-module.h"
-#include "ns3/lte-epc=area.h"
+#include "ns3/lte-epc-area.h"
+
 namespace ns3{
 
 class packFlag{
@@ -26,14 +27,15 @@ class controllerApplication:public Application{
 	public:
 
 //		controllerApplication(Ptr<Node>,Ipv4InterfaceContainer,Ipv4InterfaceContainer,int,int);
-                controllerApplication(Ptr<Node>,NodeContainer,NodeContainer,Ipv4InterfaceContainer ifc);
+                controllerApplication(Ptr<Node>,NodeContainer,NodeContainer,Ipv4InterfaceContainer);
 
 		virtual ~controllerApplication(void);
 		virtual void StartApplication();
 		virtual void StopApplication();
 
 		void SetStatus(lteEpcTag,uint8_t,uint8_t,Ipv4Address);
-		void InstallAreaInfo(vector<lteEpcArea>);
+		void InstallAreaInfo(std::vector<lteEpcArea>);
+		InetSocketAddress getDestinationAddress(Ipv4Address);
 
 		void RecvFromMmeSocket(Ptr<Socket>);
                 void RecvFromUgwSocket(Ptr<Socket>);
@@ -81,7 +83,7 @@ class controllerApplication:public Application{
 		int m_lossBuff;
 
 //area info 
-		vector<lteEpcArea> area_m;
+		std::vector<lteEpcArea> m_area;
 };
 
 }

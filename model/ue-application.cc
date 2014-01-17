@@ -25,7 +25,6 @@ ueApplication::ueApplication(Ptr<Node> ueNode,NodeContainer enbc,Ipv4InterfaceCo
 {
 	m_port = 8086;
 	InitSocket();
-	init
 }
 
 ueApplication::~ueApplication(void){
@@ -34,12 +33,12 @@ ueApplication::~ueApplication(void){
 void ueApplication::InitRecvSocket(){
 	TypeId tid = TypeId::LookupByName("ns3::UdpSocketFactory");
 	m_socketEnb = Socket::CreateSocket(m_ueNode,tid);
-	m_socketEnb->Bind(InetSocketAddress(m_ifc.GetAddress(ueNode->GetId()),m_port));
+	m_socketEnb->Bind(InetSocketAddress(m_ifc.GetAddress(m_ueNode->GetId()),m_port));
 }
 void ueApplication::InitSendSocket(){
 	TypeId tid = TypeId::LookupByName("ns3::UdpSocketFactory");
 	m_sendToEnbSocket = Socket::CreateSocket(m_ueNode,tid);
-	m_sendToEnbSocket->Bind(InetSocketAddress(m_ifc.GetAddress(ueNode->GetId()),8085));
+	m_sendToEnbSocket->Bind(InetSocketAddress(m_ifc.GetAddress(m_ueNode->GetId()),8085));
 }
 void ueApplication::InitSocket(){
 /*	InitRecvSocket();
@@ -70,8 +69,8 @@ void ueApplication::SetStatus(lteEpcTag tag,uint8_t flag,uint8_t status,InetSock
 void ueApplication::ProcessSession(lteEpcTag tag){
 	std::cout<<"ue\t\t: ";
 	if(tag.m_status == (uint8_t)m_SessionRadioBearerEstablishment){
-		std::cout<<"receive enb radiobeareestablishment ";
-		SetStatus(tag,(uint8_t)m_Session,(uint8_t)m_SessionUplinkData,InetSocketAddress(m_ifc.GetAddress(enbc.Get(0)->GetId()),8086))
+		std::cout<<"receive enb radiobeareestablishment "<<std::endl;
+		SetStatus(tag,(uint8_t)m_Session,(uint8_t)m_SessionUplinkData,InetSocketAddress(m_ifc.GetAddress(m_enbc.Get(0)->GetId()),8086));
 	}
 //	std::cout<<"\t:tag number"<<tag.m_count<<"----------"<<Simulator::Now().GetSeconds()<<std::endl;
 } 

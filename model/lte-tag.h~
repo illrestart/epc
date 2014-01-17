@@ -9,45 +9,50 @@
 #include "ns3/traced-callback.h"
 #include "ns3/object.h"
 #include "ns3/callback.h"
+#include <string>
+#include <sstream>
+#include "ns3/internet-module.h"
+#include "ns3/ipv4-address.h"
 
 #ifndef LTEEPCTAG_H
 #define LTEEPCTAG_H
 namespace ns3{
-
+enum Flag{
+		m_Session,
+		m_Handover,
+};
 enum Signal_Status{
 	//		int m_paraNum;
 			/*
 			*the flag of session or handover
 			*/
-		uint8_t m_Empty;
-
-		uint8_t m_Session;
-		uint8_t m_Handover;
+		m_Empty,
 			
 			/*
 			*session and handover procedure
 			*/
-		uint8_t m_SessionServiceRequest;
-		uint8_t m_SessionAuthentication;
-		uint8_t m_SessionInitialContextSetupRequest;
-		uint8_t m_SessionRadioBearerEstablishment;
-		uint8_t m_SessionUplinkData;
-		uint8_t m_SessionInitialContextSetupComplete;
-		uint8_t m_SessionModifyBearerRequest;
-		uint8_t m_SessionModifyBearerRespone;
-		uint8_t m_SessionPCEFInitialedIPCAN;
-		uint8_t m_SessionModifyBearerResponse;
+		m_SessionServiceRequest,
+		m_SessionAuthentication,
+		m_SessionInitialContextSetupRequest,
+		m_SessionRadioBearerEstablishment,
+		m_SessionUplinkData,
+		m_SessionInitialContextSetupComplete,
+		m_SessionModifyBearerRequest,
+		m_SessionModifyBearerRespone,
+		m_SessionPCEFInitialedIPCAN,
+		m_SessionModifyBearerResponse,
 
-		uint8_t m_HandoverPathSwitchRequest;
-		uint8_t m_HandoverModifyBearerRequest;
-		uint8_t m_HandoverModifyBearerRequestToUgw;
-		uint8_t m_HandoverModifyBearerResponseToUgw;
-		uint8_t m_HandoverModifyBearerResponse;
-		uint8_t m_HandoverEndMarkerToSourceEnb;
-		uint8_t m_HandoverEndMarkerToTargetEnb;
-		uint8_t m_HandoverPathSwitchRequestAck;
-		uint8_t m_HandoverReleaseResource;
+		m_HandoverPathSwitchRequest,
+		m_HandoverModifyBearerRequest,
+		m_HandoverModifyBearerRequestToUgw,
+		m_HandoverModifyBearerResponseToUgw,
+		m_HandoverModifyBearerResponse,
+		m_HandoverEndMarkerToSourceEnb,
+		m_HandoverEndMarkerToTargetEnb,
+		m_HandoverPathSwitchRequestAck,
+		m_HandoverReleaseResource
 };
+
 class lteEpcTag : public Tag {
 	public:
 		lteEpcTag();
@@ -64,6 +69,14 @@ class lteEpcTag : public Tag {
 		virtual void Deserialize(TagBuffer);
 		
 		virtual void Print(std::ostream &os)const{}
+
+//function user to transform Ipv4Address and string
+		void setSourceIp(Ipv4Address);
+		void setSourceIp(std::string);
+		void setDestIp(Ipv4Address);
+		void setDestIp(std::string);
+		std::string getStrIp(Ipv4Address);
+		
 
 		void setM_Session();
 		void setM_Handover();
@@ -88,33 +101,15 @@ class lteEpcTag : public Tag {
 		void setM_HandoverEndMarkerToTargetEnb();
 		void setM_HandoverPathSwitchRequestAck();
 		void setM_HandoverReleaseResource();
-
-		uint8_t getM_Session();
-		uint8_t getM_Handover();
-
-		uint8_t getM_SessionServiceRequest();
-		uint8_t getM_SessionAuthentication();
-		uint8_t getM_SessionInitialContextSetupRequest();
-		uint8_t getM_SessionRadioBearerEstablishment();
-		uint8_t getM_SessionUplinkData();
-		uint8_t getM_SessionInitialContextSetupComplete();
-		uint8_t getM_SessionModifyBearerRequest();
-		uint8_t getM_SessionModifyBearerRespone();
-		uint8_t getM_SessionPCEFInitialedIPCAN();
-		uint8_t getM_SessionModifyBearerResponse();
-
-		uint8_t getM_HandoverPathSwitchRequest();
-		uint8_t getM_HandoverModifyBearerRequest();
-		uint8_t getM_HandoverModifyBearerRequestToUgw();
-		uint8_t getM_HandoverModifyBearerResponseToUgw();
-		uint8_t getM_HandoverModifyBearerResponse();
-		uint8_t getM_HandoverEndMarkerToSourceEnb();
-		uint8_t getM_HandoverEndMarkerToTargetEnb();
-		uint8_t getM_HandoverPathSwitchRequestAck();
-		uint8_t getM_HandoverReleaseResource();
-
 		
 		uint8_t m_status;
+		uint8_t m_flag;
+		int m_count;
+		int m_id;
+		
+		Ipv4Address m_sourceIp;
+		Ipv4Address m_destIp;
+
 };
 
 }

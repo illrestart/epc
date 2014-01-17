@@ -11,6 +11,8 @@
 #include "ns3/callback.h"
 #include <string>
 #include <sstream>
+#include "ns3/internet-module.h"
+#include "ns3/ipv4-address.h"
 
 #ifndef LTEEPCTAG_H
 #define LTEEPCTAG_H
@@ -70,10 +72,10 @@ class lteEpcTag : public Tag {
 
 //function user to transform Ipv4Address and string
 		void setSourceIp(Ipv4Address);
-		void setSourceIp(string);
+		void setSourceIp(std::string);
 		void setDestIp(Ipv4Address);
-		void setDestIp(string);
-		string getStrIp(Ipv4Address);
+		void setDestIp(std::string);
+//		std::string getStrIp(Ipv4Address);
 		
 
 		void setM_Session();
@@ -105,7 +107,7 @@ class lteEpcTag : public Tag {
 		int m_count;
 		int m_id;
 		
-		Ipv4Address m_sourceIP;
+		Ipv4Address m_sourceIp;
 		Ipv4Address m_destIp;
 
 };

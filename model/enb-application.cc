@@ -19,7 +19,8 @@ void enbApplication::DoDispose(void){
 
 enbApplication::enbApplication(Ptr<Node> enbNode,NodeContainer enbc,NodeContainer uec,NodeContainer mmec,NodeContainer ugwc,Ipv4InterfaceContainer ifc)
 	:m_enbNode(enbNode),
-	m_enbc(enbc)
+	m_enbc(enbc),
+	m_uec(uec),
 	m_mmec(mmec),
 	m_ugwc(ugwc),
 	m_ifc(ifc)
@@ -92,15 +93,15 @@ void enbApplication::ProcessSession(lteEpcTag tag){
 	std::cout<<"enb\t\t: ";
 	if(tag.m_status == (uint8_t)m_SessionServiceRequest){
 		std::cout<<"receive ue request ";
-		SetStatus(tag,(uint8_t)m_Session,(uint8_t)m_SessionServiceRequest,InetSocketAddress(ifc.GetAddress(m_mmec.Get(0)->GetId()),8086));
+		SetStatus(tag,(uint8_t)m_Session,(uint8_t)m_SessionServiceRequest,InetSocketAddress(m_ifc.GetAddress(m_mmec.Get(0)->GetId()),8086));
 	}
 	else if(tag.m_status == (uint8_t)m_SessionInitialContextSetupRequest){
 		std::cout<<"receive mme initialcontextsetuprequest ";
-		SetStatus(tag,(uint8_t)m_Session,(uint8_t)m_SessionRadioBearerEstablishment,InetSocketAddress(ifc.GetAddress(m_uec.Get(0)->GetId()),8086));
+		SetStatus(tag,(uint8_t)m_Session,(uint8_t)m_SessionRadioBearerEstablishment,InetSocketAddress(m_ifc.GetAddress(m_uec.Get(0)->GetId()),8086));
 	}
 	else if(tag.m_status == (uint8_t)m_SessionUplinkData){
 		std::cout<<"receive ue uplinkdata ";
-		SetStatus(tag,(uint8_t)m_Session,(uint8_t)m_SessionInitialContextSetupComplete,InetSocketAddress(ifc.GetAddress(m_mmec.Get(0)->GetId()),8086));
+		SetStatus(tag,(uint8_t)m_Session,(uint8_t)m_SessionInitialContextSetupComplete,InetSocketAddress(m_ifc.GetAddress(m_mmec.Get(0)->GetId()),8086));
 	}
 	std::cout<<"\t:tag number"<<tag.m_count<<"----------"<<Simulator::Now().GetSeconds()<<std::endl;
 } 
