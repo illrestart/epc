@@ -12,6 +12,9 @@
 #include "ns3/packet.h"
 #include "ns3/network-module.h"
 #include "ns3/lte-epc-area.h"
+#include "ns3/node-buffer.h"
+#include "unistd.h"
+#include "ns3/system-thread.h"
 
 namespace ns3{
 
@@ -45,6 +48,7 @@ class controllerApplication:public Application{
 		void InitRecvSocket();
 		void InitSendSocket();
 		void InitSocket();
+		void dealPacket();
 
 
 		Ptr<Node> m_controllerNode;
@@ -76,6 +80,12 @@ class controllerApplication:public Application{
 		Time m_endProcess;	//the time that controller process the last packet
              
                 
+		Ptr<SystemThread> m_st[100];
+		lteEpcBuffer m_buf;
+		int m_threadNum;
+		int m_processTime;
+		int m_maxsize;
+
         int m_SocketSourceIpFlag;
 //                InetSocketAddress m_SocketSourceIp; //the socket source ip
 		int m_maxBuffSize;

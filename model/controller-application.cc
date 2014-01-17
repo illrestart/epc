@@ -45,6 +45,10 @@ controllerApplication::controllerApplication(Ptr<Node> controllerNode,NodeContai
 	m_buffCount = 0;
 	m_lossBuff = 0;
 
+	m_buf.m_maxsize = 10;
+	m_threadNum = 1;
+	m_processTime = 1000;
+
 /*	for(int i=0;i<4;++i){
 		m_mmeControllerIfc[i] = mmeControllerIfc[i];
 		m_controllerUgwIfc[i] = controllerUgwIfc[i];
@@ -86,8 +90,31 @@ void controllerApplication::InitSocket(){
 	m_socket = Socket::CreateSocket(m_controllerNode,tid);
 	m_socket->Bind(InetSocketAddress(m_ifc.GetAddress(m_controllerNode->GetId()),m_port));
 }
+void controllerApplication::dealPacket(){
+    int flag = 0;
+    lteEpcPacket packet;
+    while(flag < 100000){
+        m_mutex.Lock();
+        if(m_buf.getSize() > 1){
+            packet = m_buf.getPacket();
+            m_mutex.Unlock();
+            Simulator::ScheduleWithContext(0xffffffff,Seconds(0.0),MakeEvent(&controllerApplication::ProcessPacket,this,packet.m_packet,packet.m_ipadd));
+            usleep(m_processTime);
+            flag = 0;
+        }
+        else{
+            m_mutex.Unlock();
+            usleep(10);
+            ++flag;
+        }
+    }
+}
 void controllerApplication::StartApplication(){
 	NS_LOG_FUNCTION(this);	
+	for(int i = 0; i < m_threadNum; ++i){
+		m_st[i] = Create<SystemThread>(MakeCallback(&controllerApplication::dealPacket,this));
+		m_st[i]->Start();
+	}
 /*	for(int i=0; i<4 ;++i){
 		m_socketMme[i]->SetRecvCallback(MakeCallback(&controllerApplication::RecvFromMmeSocket,this));
 		m_socketUgw[i]->SetRecvCallback(MakeCallback(&controllerApplication::RecvFromMmeSocket,this));
@@ -97,6 +124,9 @@ void controllerApplication::StartApplication(){
 }
 void controllerApplication::StopApplication(){
 	NS_LOG_FUNCTION(this);	
+	for(int i = 0; i < m_threadNum; ++i){
+		m_st[i]->Join();
+	}
 
 }
 //ues to define the destination address
@@ -189,8 +219,20 @@ void controllerApplication::RecvFromMmeSocket(Ptr<Socket> socket){
   	Ptr<Packet> packet = socket->RecvFrom (from);
  	InetSocketAddress m_SocketSourceIp = InetSocketAddress::ConvertFrom (from);
 	Ipv4Address ipadd = m_SocketSourceIp.GetIpv4();	
-
-	Simulator::Schedule(Seconds(0.5),&controllerApplication::ProcessPacket,this,packet,ipadd);
+	
+	lteEpcPacket pack;
+	pack.m_packet = packet;
+	pack.m_ipadd = ipadd;
+	if(m_buf.getSize() < m_buf.maxSize()){
+            m_mutex.Lock();
+            m_buf.push(pack);
+            m_mutex.Unlock();
+        }
+        else{
+            ++m_lossBuff;
+        }
+	
+//	Simulator::Schedule(Seconds(0.5),&controllerApplication::ProcessPacket,this,packet,ipadd);
 }
 void controllerApplication::InstallAreaInfo(std::vector<lteEpcArea> area){
 	m_area = area;

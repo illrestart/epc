@@ -21,6 +21,7 @@ def build(bld):
     	'model/session-application.cc',
         'model/handover-application.cc',
         'model/lte-epc-area.cc',
+        'model/node-buffer.cc',
         'helper/epc-helper.cc',
         'helper/ltehelper.cc',
        # 'helper/InitialModelHelper.cc',
@@ -45,6 +46,7 @@ def build(bld):
     	'model/session-application.h',
         'model/handover-application.h',
         'model/lte-epc-area.h',
+        'model/node-buffer.h',
         'helper/epc-helper.h',
         'helper/ltehelper.h',
         #'helper/InitialModelHelper.h'
