@@ -19,7 +19,8 @@ void enbApplication::DoDispose(void){
 
 enbApplication::enbApplication(Ptr<Node> enbNode,NodeContainer enbc,NodeContainer uec,NodeContainer mmec,NodeContainer ugwc,Ipv4InterfaceContainer ifc)
 	:m_enbNode(enbNode),
-	m_enbc(enbc)
+	m_enbc(enbc),
+	m_uec(uec),
 	m_mmec(mmec),
 	m_ugwc(ugwc),
 	m_ifc(ifc)
@@ -109,7 +110,7 @@ void enbApplication::ProcessHandover(lteEpcTag tag){
 	Ptr<Packet> packetSend = Create<Packet>();
 	lteEpcTag tagSend;
 	tagSend.m_count = tag.m_count;
-	std::cout<<"enb\t\t: ";
+	std::cout<<"enb\t\t: handover";
 	if(tag.m_status == (uint8_t)m_HandoverEndMarkerToTargetEnb){
 		std::cout<<"TargetENB receives End Marker from mme";
 	}
@@ -133,6 +134,7 @@ void enbApplication::ProcessPacket(Ptr<Packet> packet){
 
 void enbApplication::RecvFromUeSocket(Ptr<Socket> socket){	
 	Ptr<Packet> packet = socket->Recv();
+	 std::cout<<"recv"<<std::endl;
 //	Simulator::Schedule(Simulator::Now(),&enbApplication::ProcessPacket,this,packet);
         Simulator::Schedule(Seconds(0.0),&enbApplication::ProcessPacket,this,packet);
 

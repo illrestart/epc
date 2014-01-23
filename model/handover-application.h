@@ -31,8 +31,8 @@ class HandoverApplication:public Application{
 			void StartSending();
 			void sendPacket();
 
-			Ptr<Node> m_ue;
-			NodeContainer m_enbc;
+			Ptr<Node> m_enb;
+			NodeContainer m_mmec;
 			Ipv4InterfaceContainer m_ifc;
 			Ptr<Node> m_node;
 		//	InetSocketAddress m_remote;

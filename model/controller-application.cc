@@ -46,7 +46,7 @@ controllerApplication::controllerApplication(Ptr<Node> controllerNode,NodeContai
 	m_lossBuff = 0;
 
 	m_buf.m_maxsize = 10;
-	m_threadNum = 1;
+	m_threadNum = 5;
 	m_processTime = 1000;
 
 /*	for(int i=0;i<4;++i){
@@ -231,7 +231,7 @@ void controllerApplication::RecvFromMmeSocket(Ptr<Socket> socket){
         else{
             ++m_lossBuff;
         }
-	
+	++m_revCount;
 //	Simulator::Schedule(Seconds(0.5),&controllerApplication::ProcessPacket,this,packet,ipadd);
 }
 void controllerApplication::InstallAreaInfo(std::vector<lteEpcArea> area){

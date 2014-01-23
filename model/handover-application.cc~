@@ -19,9 +19,9 @@ void HandoverApplication::DoDispose(void){
         std::cout<<"--------Handover Send Count---------:"<<handoverCount<<std::endl;
 }
 
-HandoverApplication::HandoverApplication(Ptr<Node> ue,NodeContainer enbc,Ipv4InterfaceContainer ifc,int totalNumber, float rate,float time)
-	:m_ue(ue),
-	m_enbc(enbc),
+HandoverApplication::HandoverApplication(Ptr<Node> enb,NodeContainer mmec,Ipv4InterfaceContainer ifc,int totalNumber, float rate,float time)
+	:m_enbc(enb),
+	m_mmec(mmec),
 	m_ifc(ifc),
 	m_socket(0),
 	m_lastStartTime(Seconds(0.0)),
@@ -47,11 +47,11 @@ HandoverApplication::~HandoverApplication(void){
 
 void HandoverApplication::StartApplication(){
 	NS_LOG_FUNCTION(this);
-	std::cout<<m_ifc.GetAddress(m_ue->GetId(),0);
+	std::cout<<m_ifc.GetAddress(m_enb->GetId(),0);
 	if(! m_socket){
-		m_socket = Socket::CreateSocket(m_ue,TypeId::LookupByName("ns3::UdpSocketFactory"));
+		m_socket = Socket::CreateSocket(m_enb,TypeId::LookupByName("ns3::UdpSocketFactory"));
 		
-		m_socket->Bind(InetSocketAddress(m_ifc.GetAddress(m_ue->GetId()),8086));
+		m_socket->Bind(InetSocketAddress(m_ifc.GetAddress(m_enb->GetId()),8086));
 	}
 	ScheduleStartEvent();
 }
@@ -88,7 +88,7 @@ void HandoverApplication::sendPacket(){
 	tag.setSourceIp(str);
 	tag.setDestIp(str);
 	packet->AddPacketTag(tag);
-	m_socket->SendTo(packet,0,InetSocketAddress(m_ifc.GetAddress(m_enbc.Get(0)->GetId()),8086));
+	m_socket->SendTo(packet,0,InetSocketAddress(m_ifc.GetAddress(m_mmec.Get(0)->GetId()),8086));
 	std::cout<<count++<<" send packet:"<<Simulator::Now()<<std::endl;
 	handoverCount++;
 }

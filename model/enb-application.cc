@@ -110,7 +110,7 @@ void enbApplication::ProcessHandover(lteEpcTag tag){
 	Ptr<Packet> packetSend = Create<Packet>();
 	lteEpcTag tagSend;
 	tagSend.m_count = tag.m_count;
-	std::cout<<"enb\t\t: ";
+	std::cout<<"enb\t\t: handover";
 	if(tag.m_status == (uint8_t)m_HandoverEndMarkerToTargetEnb){
 		std::cout<<"TargetENB receives End Marker from mme";
 	}
